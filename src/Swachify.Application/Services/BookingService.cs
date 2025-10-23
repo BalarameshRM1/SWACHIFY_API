@@ -103,17 +103,19 @@ namespace Swachify.Application.Services
       booking.address = booking.address;
       booking.phone = booking.phone;
       booking.email = booking.email;
+      booking.service_id=booking.service_id;
       booking.status_id = 1;
       _db.service_bookings.Add(booking);
       await _db.SaveChangesAsync(ct);
 
       if (!string.IsNullOrEmpty(booking.email))
       {
+        var serviceName = await _db.master_departments.FirstOrDefaultAsync(d => d.id == booking.service_id);
         var subject = $"Thank You for Choosing Swachify Cleaning Service!";
         var mailtemplate = await _db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.ServiceBookingMail);
         string emailBody = mailtemplate.description
         .Replace("{0}", booking.full_name)
-        .Replace("{1}", booking?.id.ToString());
+        .Replace("{1}", serviceName?.department_name+" Service");
         if (mailtemplate != null)
         {
           await _emailService.SendEmailAsync(booking.email, subject, emailBody);

@@ -8,36 +8,82 @@ using Swachify.Infrastructure.Models;
 
 namespace Swachify.Application;
 
-public class UserService(MyDbContext db, IPasswordHasher hasher,IEmailService email) : IUserService
+public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService email) : IUserService
 {
 
     public async Task<long> CreateUserAsync(UserCommandDto cmd, CancellationToken ct = default)
     {
+        if (cmd == null) throw new ArgumentNullException(nameof(cmd));
+        ct.ThrowIfCancellationRequested();
+
+        if (string.IsNullOrWhiteSpace(cmd.email))
+            throw new ArgumentException("Email is required", nameof(cmd.email));
+
         if (await db.user_registrations.AnyAsync(u => u.email == cmd.email, ct))
             throw new InvalidOperationException("Email exists");
-        long id = await db.user_registrations.MaxAsync(u => (long?)u.id) ?? 0L;
-
+        long userid = await db.user_registrations.MaxAsync(u => (long?)u.id) ?? 0L;
+        userid = userid + 1;
         var user = new user_registration
         {
-            id = id + 1,
+            id = userid,
             email = cmd.email,
             first_name = cmd.first_name,
             last_name = cmd.last_name,
             mobile = cmd.mobile,
-            role_id = cmd.role_id
+            role_id = 3,
+            location_id = cmd.location_id,
         };
-        await db.user_registrations.AddAsync(user);
-        long user_auth_id = await db.user_auths.MaxAsync(u => (long?)u.id) ?? 0L;
-        var user_auth = new user_auth
+
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
+
+        try
         {
-            id = user_auth_id + 1,
-            user_id = user.id,
-            email = cmd.email,
-            password = hasher.Hash(cmd.password)
-        };
-        await db.user_auths.AddAsync(user_auth);
-        await db.SaveChangesAsync(ct);
-        return user.id;
+            await db.user_registrations.AddAsync(user, ct);
+            await db.SaveChangesAsync(ct);
+
+            if (cmd.dept_id != null && cmd.dept_id.Any())
+            {
+                var userDeptList = new List<user_department>(cmd.dept_id.Count);
+                foreach (var d in cmd.dept_id)
+                {
+                    userDeptList.Add(new user_department
+                    {
+                        user_id = userid,
+                        dept_id = d
+                    });
+                }
+
+                if (userDeptList.Count > 0)
+                {
+                    await db.user_departments.AddRangeAsync(userDeptList, ct);
+                }
+            }
+
+            var userAuth = new user_auth
+            {
+                id = userid,
+                user_id = userid,
+                email = cmd.email,
+                password = hasher.Hash(cmd.password)
+            };
+
+            await db.user_auths.AddAsync(userAuth, ct);
+
+            await db.SaveChangesAsync();
+
+            await tx.CommitAsync(ct);
+
+            return user.id;
+        }
+        catch (DbUpdateException dbEx)
+        {
+            if (dbEx.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+            {
+                throw new InvalidOperationException("Email already exists (unique constraint)", dbEx);
+            }
+
+            throw;
+        }
     }
 
     public async Task<List<AllUserDtos>> GetAllUsersAsync()
@@ -102,80 +148,80 @@ public class UserService(MyDbContext db, IPasswordHasher hasher,IEmailService em
         return userResult;
     }
 
-public async Task<long> CreateEmployeAsync(EmpCommandDto cmd, CancellationToken ct = default)
-{
-    if (cmd == null) throw new ArgumentNullException(nameof(cmd));
-    ct.ThrowIfCancellationRequested();
+    public async Task<long> CreateEmployeAsync(EmpCommandDto cmd, CancellationToken ct = default)
+    {
+        if (cmd == null) throw new ArgumentNullException(nameof(cmd));
+        ct.ThrowIfCancellationRequested();
 
-    if (string.IsNullOrWhiteSpace(cmd.email))
-        throw new ArgumentException("Email is required", nameof(cmd.email));
+        if (string.IsNullOrWhiteSpace(cmd.email))
+            throw new ArgumentException("Email is required", nameof(cmd.email));
 
-    if (await db.user_registrations.AnyAsync(u => u.email == cmd.email, ct))
-        throw new InvalidOperationException("Email exists");
+        if (await db.user_registrations.AnyAsync(u => u.email == cmd.email, ct))
+            throw new InvalidOperationException("Email exists");
         long userid = await db.user_registrations.MaxAsync(u => (long?)u.id) ?? 0L;
         userid = userid + 1;
-    var user = new user_registration
-    {
-        id=userid,
-        email = cmd.email,
-        first_name = cmd.first_name,
-        last_name = cmd.last_name,
-        mobile = cmd.mobile,
-        role_id = 3,
-        location_id = cmd.location_id,
-    };
-
-    await using var tx = await db.Database.BeginTransactionAsync(ct);
-
-    try
-    {
-        await db.user_registrations.AddAsync(user, ct);
-        await db.SaveChangesAsync(ct); 
-
-        if (cmd.dept_id != null && cmd.dept_id.Any())
+        var user = new user_registration
         {
-            var userDeptList = new List<user_department>(cmd.dept_id.Count);
-            foreach (var d in cmd.dept_id)
-            {
-                userDeptList.Add(new user_department
-                {
-                    user_id = userid,
-                    dept_id = d
-                });
-            }
-
-            if (userDeptList.Count > 0)
-            {
-                await db.user_departments.AddRangeAsync(userDeptList, ct);
-            }
-        }
-
-        var userAuth = new user_auth
-        {
-            id=userid,
-            user_id = userid,
+            id = userid,
             email = cmd.email,
-            password = hasher.Hash(cmd.email) 
+            first_name = cmd.first_name,
+            last_name = cmd.last_name,
+            mobile = cmd.mobile,
+            role_id = 3,
+            location_id = cmd.location_id,
         };
 
-        await db.user_auths.AddAsync(userAuth, ct);
+        await using var tx = await db.Database.BeginTransactionAsync(ct);
 
-        await db.SaveChangesAsync();
-
-        await tx.CommitAsync(ct);
-
-        return user.id;
-    }
-    catch (DbUpdateException dbEx)
-    {
-        if (dbEx.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+        try
         {
-            throw new InvalidOperationException("Email already exists (unique constraint)", dbEx);
-        }
+            await db.user_registrations.AddAsync(user, ct);
+            await db.SaveChangesAsync(ct);
 
-        throw;
+            if (cmd.dept_id != null && cmd.dept_id.Any())
+            {
+                var userDeptList = new List<user_department>(cmd.dept_id.Count);
+                foreach (var d in cmd.dept_id)
+                {
+                    userDeptList.Add(new user_department
+                    {
+                        user_id = userid,
+                        dept_id = d
+                    });
+                }
+
+                if (userDeptList.Count > 0)
+                {
+                    await db.user_departments.AddRangeAsync(userDeptList, ct);
+                }
+            }
+
+            var userAuth = new user_auth
+            {
+                id = userid,
+                user_id = userid,
+                email = cmd.email,
+                password = hasher.Hash(cmd.email)
+            };
+
+            await db.user_auths.AddAsync(userAuth, ct);
+
+            await db.SaveChangesAsync();
+
+            await tx.CommitAsync(ct);
+
+            return user.id;
+        }
+        catch (DbUpdateException dbEx)
+        {
+            if (dbEx.InnerException is PostgresException pgEx && pgEx.SqlState == "23505")
+            {
+                throw new InvalidOperationException("Email already exists (unique constraint)", dbEx);
+            }
+
+            throw;
+        }
     }
-}
 
 
     public async Task<bool> AssignEmployee(long id, long user_id)
@@ -185,25 +231,28 @@ public async Task<long> CreateEmployeAsync(EmpCommandDto cmd, CancellationToken 
         existing.status_id = 2;
         existing.assign_to = user_id;
         await db.SaveChangesAsync();
+        var serviceName = await db.master_departments.FirstOrDefaultAsync(d => d.id == existing.service_id);
+        var slotvalue = await db.master_slots.FirstOrDefaultAsync(d => d.id == existing.slot_id);
         var customer = await db.user_registrations.FirstOrDefaultAsync(db => db.id == existing.created_by);
         var agent = await db.user_registrations.FirstOrDefaultAsync(db => db.id == existing.assign_to);
         var location = await db.master_locations.FirstOrDefaultAsync(db => db.id == agent.id);
         var mailtemplate = await db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.CustomerAssignedAgent);
         string emailBody = mailtemplate.description
-        .Replace("{0}", customer?.first_name +" " + customer?.last_name)
+        .Replace("{0}", customer?.first_name + " " + customer?.last_name)
         .Replace("{1}", agent?.first_name + " " + agent?.last_name)
-        .Replace("{2}", existing?.modified_date.ToString())
-        .Replace("{3}", location?.location_name);
+        .Replace("{2}", existing.preferred_date.ToString() + " " + slotvalue.slot_time.ToString())
+        .Replace("{3}", serviceName?.department_name)
+        .Replace("{4}", location?.location_name);
         if (mailtemplate != null)
         {
             await email.SendEmailAsync(existing.email, AppConstants.CustomerAssignedAgent, emailBody);
         }
         var agentmailtemplate = await db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.EMPAssignmentMail);
         string agentEmailBody = agentmailtemplate?.description.ToString()
-         .Replace("{0}",existing?.id.ToString())
-         .Replace("{1}",agent?.first_name + " " + agent?.last_name)
-         .Replace("{2}",existing?.id.ToString())
-         .Replace("{3}",customer?.first_name +" " + customer?.last_name)
+         .Replace("{0}", existing?.id.ToString())
+         .Replace("{1}", agent?.first_name + " " + agent?.last_name)
+         .Replace("{2}", existing?.id.ToString())
+         .Replace("{3}", customer?.first_name + " " + customer?.last_name)
         .Replace("{4}", location?.location_name)
         .Replace("{5}", existing?.modified_date.ToString());
 
