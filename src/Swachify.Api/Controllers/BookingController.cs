@@ -52,7 +52,11 @@ namespace Swachify.Api.Controllers
                 b.full_name,
                 b.email,
                 b.phone,
-                b.status_id
+                b.status_id,
+
+b.is_regular,
+b.is_premium,
+b.is_ultimate
             );
 
             return Ok(dto);
@@ -75,7 +79,10 @@ namespace Swachify.Api.Controllers
                 address = dto.address,
                 phone = dto.phone,
                 email = dto.email,
-                status_id=dto.status_id,
+                status_id = dto.status_id,
+                is_premium = dto.is_premium,
+                is_regular = dto.is_regular,
+is_ultimate=dto.is_ultimate
             };
 
             var id = await _bookingService.CreateAsync(booking, ct);

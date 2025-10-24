@@ -109,6 +109,7 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
             dept_id = u.dept_id,
             email = u.email,
             first_name = u.first_name,
+last_name=u.last_name,
             gender_id = u.gender_id,
             is_active = u.is_active,
             location_id = u.location_id,
@@ -238,7 +239,7 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
         var location = await db.master_locations.FirstOrDefaultAsync(db => db.id == agent.id);
         var mailtemplate = await db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.CustomerAssignedAgent);
         string emailBody = mailtemplate.description
-        .Replace("{0}", customer?.first_name + " " + customer?.last_name)
+        .Replace("{0}", existing?.full_name)
         .Replace("{1}", agent?.first_name + " " + agent?.last_name)
         .Replace("{2}", existing.preferred_date.ToString() + " " + slotvalue.slot_time.ToString())
         .Replace("{3}", serviceName?.department_name)
@@ -252,13 +253,13 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
          .Replace("{0}", existing?.id.ToString())
          .Replace("{1}", agent?.first_name + " " + agent?.last_name)
          .Replace("{2}", existing?.id.ToString())
-         .Replace("{3}", customer?.first_name + " " + customer?.last_name)
+         .Replace("{3}", existing?.full_name)
         .Replace("{4}", location?.location_name)
-        .Replace("{5}", existing?.modified_date.ToString());
-
+        .Replace("{5}", existing.preferred_date.ToString() + "  " + slotvalue.slot_time.ToString());
+var subject = $"New Service Assigned - {existing?.id}";
         if (mailtemplate != null)
         {
-            await email.SendEmailAsync(agent.email, AppConstants.EMPAssignmentMail, emailBody);
+            await email.SendEmailAsync(agent.email, subject , agentEmailBody);
         }
         return true;
     }

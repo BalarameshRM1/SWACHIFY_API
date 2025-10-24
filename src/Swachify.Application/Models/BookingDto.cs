@@ -17,6 +17,11 @@
      string? email,
      string? address,
 
-long? status_id
+long? status_id,
+   bool? is_regular ,
+
+     bool? is_premium ,
+
+     bool? is_ultimate 
     );
 }
