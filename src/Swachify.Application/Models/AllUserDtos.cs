@@ -22,6 +22,7 @@ public class AllUserDtos
     public long? gender_id { get; set; }
 
     public bool? is_active { get; set; }
+    public bool? is_assigned { get; set; }
     public long? location_id { get; set; }
 
     public List<string> depts { get; set; }
