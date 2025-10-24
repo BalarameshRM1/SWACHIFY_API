@@ -102,19 +102,23 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
             .GroupBy(x => x.user_id)
             .ToDictionary(g => g.Key, g => g.Select(x => x.department_name).ToList());
 
-        var allUsers = users.Select(u => new AllUserDtos
+        var assignedUsersid = await db.service_bookings.Where(d => (d.status_id == 1 || d.service_id==2 || d.status_id==3) && d.is_active == true).Select(s => s.assign_to).Distinct().ToArrayAsync();
+
+        var allUsers = users
+        .Select(u => new AllUserDtos
         {
             id = u.id,
             age = u.age,
             dept_id = u.dept_id,
             email = u.email,
             first_name = u.first_name,
-last_name=u.last_name,
- mobile= u.mobile,
- role_id = u.role_id,
+            last_name = u.last_name,
+            mobile = u.mobile,
+            role_id = u.role_id,
             gender_id = u.gender_id,
             is_active = u.is_active,
             location_id = u.location_id,
+            is_assigned = assignedUsersid.Contains(u.id),
             depts = grouped.TryGetValue(u.id, out var list) ? list : new List<string>()
         }).ToList();
         return allUsers ?? new List<AllUserDtos>();
@@ -258,10 +262,10 @@ last_name=u.last_name,
          .Replace("{3}", existing?.full_name)
         .Replace("{4}", location?.location_name)
         .Replace("{5}", existing.preferred_date.ToString() + "  " + slotvalue.slot_time.ToString());
-var subject = $"New Service Assigned - {existing?.id}";
+        var subject = $"New Service Assigned - {existing?.id}";
         if (mailtemplate != null)
         {
-            await email.SendEmailAsync(agent.email, subject , agentEmailBody);
+            await email.SendEmailAsync(agent.email, subject, agentEmailBody);
         }
         return true;
     }
