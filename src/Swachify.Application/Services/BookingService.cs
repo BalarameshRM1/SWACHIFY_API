@@ -62,6 +62,10 @@ namespace Swachify.Application.Services
             slot_id = b.slot_id,
             modified_date = b.modified_date,
             preferred_date = b.preferred_date,
+            is_regular = b.is_regular,
+            is_premium = b.is_premium,
+            is_ultimate = b.is_ultimate,
+            
 
             department = department == null ? null : new DepartmentDtos
             {
