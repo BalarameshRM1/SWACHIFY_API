@@ -39,6 +39,9 @@ public class AllBookingsDtos
 
     public long? assign_to { get; set; }
     public string? assign_to_name { get; set; }
+    public bool? is_regular { get; set; }
+    public bool? is_premium { get; set; }
+    public bool? is_ultimate { get; set; }
 
     public StatusesDtos? Status { get; set; }
     public DepartmentDtos? department { get; set; }
