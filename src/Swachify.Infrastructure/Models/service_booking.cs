@@ -39,6 +39,14 @@ public partial class service_booking
 
     public long? assign_to { get; set; }
 
+    public bool? unavailable { get; set; }
+
+    public bool? is_regular { get; set; }
+
+    public bool? is_premium { get; set; }
+
+    public bool? is_ultimate { get; set; }
+
     public virtual user_registration? created_byNavigation { get; set; }
 
     public virtual master_department dept { get; set; } = null!;
