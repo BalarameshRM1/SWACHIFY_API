@@ -110,6 +110,8 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
             email = u.email,
             first_name = u.first_name,
 last_name=u.last_name,
+ mobile= u.mobile,
+ role_id = u.role_id,
             gender_id = u.gender_id,
             is_active = u.is_active,
             location_id = u.location_id,
