@@ -238,10 +238,8 @@ namespace Swachify.Application.Services
       await _db.SaveChangesAsync();
       var subject = $"Your Cleaning Service Is Completed!";
       var mailtemplate = await _db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.CustomerAssignMail);
-      var customer = await _db.user_registrations.FirstOrDefaultAsync(db => db.id == existing.created_by);
-
       string emailBody = mailtemplate.description
-      .Replace("{0}", customer?.first_name + " " + customer?.last_name);
+      .Replace("{0}", existing?.full_name);
 
       if (mailtemplate != null)
       {

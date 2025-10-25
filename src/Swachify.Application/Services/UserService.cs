@@ -252,7 +252,6 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
         await db.SaveChangesAsync();
         var serviceName = await db.master_departments.FirstOrDefaultAsync(d => d.id == existing.service_id);
         var slotvalue = await db.master_slots.FirstOrDefaultAsync(d => d.id == existing.slot_id);
-        var customer = await db.user_registrations.FirstOrDefaultAsync(db => db.id == existing.created_by);
         var agent = await db.user_registrations.FirstOrDefaultAsync(db => db.id == existing.assign_to);
         var location = await db.master_locations.FirstOrDefaultAsync(db => db.id == agent.id);
         var mailtemplate = await db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.CustomerAssignedAgent);
