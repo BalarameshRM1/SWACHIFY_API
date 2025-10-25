@@ -6,4 +6,6 @@ public static class AppConstants
     public const string EMPAssignmentMail = "Service Assignment Mail to EMP";
     public const string CustomerAssignMail = "Service Completion Assigned Mail to Customer";
     public const string ServiceBookingMail = "Service Booking Mail";
+
+    public const string ResetEmail = "Welcome! Please reset your password";
 }

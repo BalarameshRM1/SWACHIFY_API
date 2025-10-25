@@ -1,5 +1,6 @@
 using System.Reflection.Metadata;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Npgsql;
 using Swachify.Application.DTOs;
 using Swachify.Application.Interfaces;
@@ -8,7 +9,7 @@ using Swachify.Infrastructure.Models;
 
 namespace Swachify.Application;
 
-public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService email) : IUserService
+public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService email,IConfiguration config) : IUserService
 {
 
     public async Task<long> CreateUserAsync(UserCommandDto cmd, CancellationToken ct = default)
@@ -102,7 +103,7 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
             .GroupBy(x => x.user_id)
             .ToDictionary(g => g.Key, g => g.Select(x => x.department_name).ToList());
 
-        var assignedUsersid = await db.service_bookings.Where(d => (d.status_id == 1 || d.service_id==2 || d.status_id==3) && d.is_active == true).Select(s => s.assign_to).Distinct().ToArrayAsync();
+        var assignedUsersid = await db.service_bookings.Where(d => (d.status_id == 1 || d.service_id == 2 || d.status_id == 3) && d.is_active == true).Select(s => s.assign_to).Distinct().ToArrayAsync();
 
         var allUsers = users
         .Select(u => new AllUserDtos
@@ -217,6 +218,17 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
 
             await tx.CommitAsync(ct);
 
+            // Email template
+            var resetlink = config["ResetPasswordLink"]+user.id;
+            var mailtemplate = await db.booking_templates.
+            FirstOrDefaultAsync(b => b.title == AppConstants.ResetEmail);
+            string emailBody = mailtemplate.description
+                .Replace("{0}", user?.first_name + " " + user?.last_name)
+                .Replace("{resetLink}",resetlink);
+            if (mailtemplate != null)
+            {
+                await email.SendEmailAsync(user?.email, AppConstants.ResetEmail, emailBody);
+            }
             return user.id;
         }
         catch (DbUpdateException dbEx)
