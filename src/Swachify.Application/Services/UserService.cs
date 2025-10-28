@@ -9,7 +9,7 @@ using Swachify.Infrastructure.Models;
 
 namespace Swachify.Application;
 
-public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService email,IConfiguration config) : IUserService
+public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService email, IConfiguration config) : IUserService
 {
 
     public async Task<long> CreateUserAsync(UserCommandDto cmd, CancellationToken ct = default)
@@ -121,7 +121,7 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
             location_id = u.location_id,
             is_assigned = assignedUsersid.Contains(u.id),
             depts = grouped.TryGetValue(u.id, out var list) ? list : new List<string>()
-        }).ToList();
+        }).Where(d => d.is_active == true).ToList();
         return allUsers ?? new List<AllUserDtos>();
     }
 
@@ -177,6 +177,7 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
             mobile = cmd.mobile,
             role_id = 3,
             location_id = cmd.location_id,
+            is_active = true,
         };
 
         await using var tx = await db.Database.BeginTransactionAsync(ct);
@@ -209,6 +210,7 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
                 id = userid,
                 user_id = userid,
                 email = cmd.email,
+                is_active = true,
                 password = hasher.Hash(cmd.email)
             };
 
@@ -219,12 +221,12 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
             await tx.CommitAsync(ct);
 
             // Email template
-            var resetlink = config["ResetPasswordLink"]+user.id;
+            var resetlink = config["ResetPasswordLink"] + user.id;
             var mailtemplate = await db.booking_templates.
             FirstOrDefaultAsync(b => b.title == AppConstants.ResetEmail);
             string emailBody = mailtemplate.description
                 .Replace("{0}", user?.first_name + " " + user?.last_name)
-                .Replace("{resetLink}",resetlink);
+                .Replace("{resetLink}", resetlink);
             if (mailtemplate != null)
             {
                 await email.SendEmailAsync(user?.email, AppConstants.ResetEmail, emailBody);
@@ -237,7 +239,6 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
             {
                 throw new InvalidOperationException("Email already exists (unique constraint)", dbEx);
             }
-
             throw;
         }
     }
@@ -296,4 +297,12 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
         return true;
     }
 
+    public async Task<bool> DeleteUserAsync(long id)
+    {
+        var existing = await db.user_registrations.FirstOrDefaultAsync(b => b.id == id);
+        if (existing == null) return false;
+        existing.is_active = false;
+        await db.SaveChangesAsync();
+        return true;
+    }
 }

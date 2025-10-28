@@ -157,7 +157,8 @@ namespace Swachify.Application.Services
       var booking = await _db.service_bookings.FirstOrDefaultAsync(b => b.id == id, ct);
       if (booking == null) return false;
 
-      _db.service_bookings.Remove(booking);
+      // _db.service_bookings.Remove(booking);
+      booking.is_active=false;
       await _db.SaveChangesAsync(ct);
       return true;
     }
