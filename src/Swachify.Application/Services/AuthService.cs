@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Identity;
 using Swachify.Infrastructure.Models;
 using Swachify.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using Swachify.Application.Interfaces;
+using Microsoft.Extensions.Configuration;
 namespace Swachify.Application;
 
-public class AuthService(MyDbContext db, IPasswordHasher hasher) : IAuthService
+public class AuthService(MyDbContext db, IPasswordHasher hasher, IEmailService emailService, IConfiguration config) : IAuthService
 {
     public async Task<user_registration?> ValidateCredentialsAsync(string email, string password, CancellationToken ct = default)
     {
@@ -19,7 +21,7 @@ public class AuthService(MyDbContext db, IPasswordHasher hasher) : IAuthService
     }
     public async Task<string> ForgotPasswordAsync(string email, string newPassword, string confirmPassword, CancellationToken ct = default)
     {
-       
+
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(newPassword) || string.IsNullOrWhiteSpace(confirmPassword))
             return "Email and passwords are required.";
 
@@ -30,14 +32,30 @@ public class AuthService(MyDbContext db, IPasswordHasher hasher) : IAuthService
         if (userAuth == null)
             return "Email not found. Please check your email or register first.";
 
-       
+
         userAuth.password = hasher.Hash(newPassword);
         userAuth.modified_date = DateTime.Now;
 
-       
+
         db.user_auths.Update(userAuth);
         await db.SaveChangesAsync(ct);
 
         return "Password updated successfully.";
+    }
+
+    public async Task<bool> ForgotpasswordLink(long user_id)
+    {
+        var resetlink = config["ResetPasswordLink"] + user_id;
+        var user = await db.user_registrations.FirstOrDefaultAsync(d => d.id == user_id);
+        var mailtemplate = await db.booking_templates.
+        FirstOrDefaultAsync(b => b.title == AppConstants.ResetEmail);
+        string emailBody = mailtemplate.description
+            .Replace("{0}", user?.first_name + " " + user?.last_name)
+            .Replace("{resetLink}", resetlink);
+        if (mailtemplate != null)
+        {
+            await emailService.SendEmailAsync(user?.email, AppConstants.ResetEmail, emailBody);
+        }
+        return true;
     }
 }
