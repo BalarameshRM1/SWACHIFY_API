@@ -72,6 +72,8 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
             await db.SaveChangesAsync();
 
             await tx.CommitAsync(ct);
+            
+
 
             return user.id;
         }
@@ -154,6 +156,33 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
 
         return userResult;
     }
+    private async Task SendWelcomeEmailAsync(string toEmail, string firstName, string password)
+    {
+        string subject = "Welcome to Swachify - Your Account Details";
+
+        string body = $@"
+    <html>
+        <body>
+            <h2>Welcome to Swachify, {firstName}!</h2>
+            <p>Your account has been created successfully.</p>
+            <p><strong>Login Email:</strong> {toEmail}</p>
+            <p><strong>Temporary Password:</strong> {password}</p>
+            <p>
+                For your security, please change your password immediately after logging in.
+            </p>
+            <p>
+                <a href='https://yourdomain.com/change-password' target='_blank'>
+                    Click here to change your password
+                </a>
+            </p>
+            <br/>
+            <p>Thank you,<br/>The Swachify Team</p>
+        </body>
+    </html>";
+
+        await email.SendEmailAsync(toEmail, subject, body);
+    }
+
 
     public async Task<long> CreateEmployeAsync(EmpCommandDto cmd, CancellationToken ct = default)
     {
@@ -216,6 +245,7 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
             await db.SaveChangesAsync();
 
             await tx.CommitAsync(ct);
+            await SendWelcomeEmailAsync(cmd.email, cmd.first_name, cmd.email);
 
             return user.id;
         }
