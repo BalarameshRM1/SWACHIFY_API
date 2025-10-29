@@ -27,8 +27,9 @@ namespace Swachify.Application.Services
     {
       var allBookings = await (
           from b in _db.service_bookings.AsNoTracking()
+          from st in _db.service_trackings.AsNoTracking()
           join d in _db.master_departments.AsNoTracking()
-              on b.dept_id equals d.id into deptJoin
+              on st.dept_id equals d.id into deptJoin
           from department in deptJoin.DefaultIfEmpty()
 
           join s in _db.master_statuses.AsNoTracking()
@@ -51,21 +52,15 @@ namespace Swachify.Application.Services
             created_by = b.created_by,
             created_by_name = user != null ? user.first_name + " " + user.last_name : null,
             created_date = b.created_date,
-            dept_id = b.dept_id,
             email = b.email,
             full_name = b.full_name,
             is_active = b.is_active,
             modified_by = b.modified_by,
             phone = b.phone,
             status_id = b.status_id,
-            service_id = b.service_id,
             slot_id = b.slot_id,
             modified_date = b.modified_date,
             preferred_date = b.preferred_date,
-            is_regular = b.is_regular,
-            is_premium = b.is_premium,
-            is_ultimate = b.is_ultimate,
-            
 
             department = department == null ? null : new DepartmentDtos
             {
@@ -91,38 +86,53 @@ namespace Swachify.Application.Services
     public async Task<service_booking?> GetByIdAsync(long id, CancellationToken ct = default)
     {
       return await _db.service_bookings
-          .Include(b => b.dept)
-          .Include(b => b.service)
-          .Include(b => b.slot)
           .FirstOrDefaultAsync(b => b.id == id, ct);
     }
 
     public async Task<long> CreateAsync(service_booking booking, CancellationToken ct = default)
     {
       booking.created_date = DateTime.Now;
-      booking.modified_date = DateTime.Now;
       booking.is_active = true;
       booking.booking_id ??= Guid.NewGuid().ToString();
       booking.full_name = booking.full_name;
       booking.address = booking.address;
       booking.phone = booking.phone;
       booking.email = booking.email;
-      booking.service_id=booking.service_id;
       booking.status_id = 1;
-      booking.is_premium = booking.is_premium;
-      booking.is_regular = booking.is_regular;
-      booking.is_ultimate = booking.is_ultimate;
+      booking.total = booking.total;
+      booking.subtotal = booking.subtotal;
+      booking.customer_requested_amount = booking.customer_requested_amount;
+      booking.discount_amount = booking.discount_amount;
+      booking.discount_percentage = booking.discount_percentage;
+      booking.discount_total = booking.discount_total;
+
       _db.service_bookings.Add(booking);
+
       await _db.SaveChangesAsync(ct);
+
+      foreach (var item in booking.service_trackings)
+      {
+        var serviceTracking = new service_tracking
+        {
+          booking_id = booking.booking_id,
+          dept_id = item.dept_id,
+          service_id = item.service_id,
+          service_type_id = item.service_type_id,
+        };
+        _db.service_trackings.Add(serviceTracking);
+        await _db.SaveChangesAsync(ct);
+
+      }
+
 
       if (!string.IsNullOrEmpty(booking.email))
       {
-        var serviceName = await _db.master_departments.FirstOrDefaultAsync(d => d.id == booking.service_id);
+        var serviceName = await _db.master_departments.FirstOrDefaultAsync(d => d.id == booking.id);
         var subject = $"Thank You for Choosing Swachify Cleaning Service!";
         var mailtemplate = await _db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.ServiceBookingMail);
         string emailBody = mailtemplate.description
         .Replace("{0}", booking.full_name)
-        .Replace("{1}", serviceName?.department_name+" Service");
+        .Replace("{1}", serviceName?.department_name + " Service");
         if (mailtemplate != null)
         {
           await _emailService.SendEmailAsync(booking.email, subject, emailBody);
@@ -136,8 +146,6 @@ namespace Swachify.Application.Services
       var existing = await _db.service_bookings.FirstOrDefaultAsync(b => b.id == id, ct);
       if (existing == null) return false;
 
-      existing.dept_id = updatedBooking.dept_id;
-      existing.service_id = updatedBooking.service_id;
       existing.slot_id = updatedBooking.slot_id;
       existing.modified_by = updatedBooking.modified_by;
       existing.modified_date = DateTime.UtcNow;
@@ -158,7 +166,7 @@ namespace Swachify.Application.Services
       if (booking == null) return false;
 
       // _db.service_bookings.Remove(booking);
-      booking.is_active=false;
+      booking.is_active = false;
       await _db.SaveChangesAsync(ct);
       return true;
     }
@@ -166,58 +174,57 @@ namespace Swachify.Application.Services
     public async Task<List<AllBookingsDtos>> GetAllBookingByUserIDAsync(long userid)
     {
       var allBookings = await (
- from b in _db.service_bookings.AsNoTracking()
- join d in _db.master_departments.AsNoTracking()
-     on b.dept_id equals d.id into deptJoin
- from department in deptJoin.DefaultIfEmpty()
+     from b in _db.service_bookings.AsNoTracking()
+     from st in _db.service_trackings.AsNoTracking()
+     join d in _db.master_departments.AsNoTracking()
+    on st.dept_id equals d.id into deptJoin
+     from department in deptJoin.DefaultIfEmpty()
 
- join s in _db.master_statuses.AsNoTracking()
+     join s in _db.master_statuses.AsNoTracking()
      on b.status_id equals s.id into statusJoin
- from status in statusJoin.DefaultIfEmpty()
+     from status in statusJoin.DefaultIfEmpty()
 
- join u in _db.user_registrations.AsNoTracking()
+     join u in _db.user_registrations.AsNoTracking()
      on b.created_by equals u.id into userJoin
- from user in userJoin.DefaultIfEmpty()
+     from user in userJoin.DefaultIfEmpty()
 
- join assign in _db.user_registrations.AsNoTracking()
+     join assign in _db.user_registrations.AsNoTracking()
      on b.assign_to equals assign.id into AssignuserJoin
- from assignUser in AssignuserJoin.DefaultIfEmpty()
+     from assignUser in AssignuserJoin.DefaultIfEmpty()
 
- select new AllBookingsDtos
- {
-   id = b.id,
-   address = b.address,
-   assign_to = b.assign_to,
-   assign_to_name = assignUser != null ? assignUser.first_name + " " + assignUser.last_name : null,
-   created_by = b.created_by,
-   created_by_name = user != null ? user.first_name + " " + user.last_name : null,
-   created_date = b.created_date,
-   dept_id = b.dept_id,
-   email = b.email,
-   full_name = b.full_name,
-   is_active = b.is_active,
-   modified_by = b.modified_by,
-   phone = b.phone,
-   status_id = b.status_id,
-   service_id = b.service_id,
-   slot_id = b.slot_id,
-   modified_date = b.modified_date,
-   preferred_date = b.preferred_date,
-   department = department == null ? null : new DepartmentDtos
-   {
-     id = department.id,
-     department_name = department.department_name,
-     is_active = department.is_active
-   },
+     select new AllBookingsDtos
+     {
+       id = b.id,
+       address = b.address,
+       assign_to = b.assign_to,
+       assign_to_name = assignUser != null ? assignUser.first_name + " " + assignUser.last_name : null,
+       created_by = b.created_by,
+       created_by_name = user != null ? user.first_name + " " + user.last_name : null,
+       created_date = b.created_date,
+       email = b.email,
+       full_name = b.full_name,
+       is_active = b.is_active,
+       modified_by = b.modified_by,
+       phone = b.phone,
+       status_id = b.status_id,
+       slot_id = b.slot_id,
+       modified_date = b.modified_date,
+       preferred_date = b.preferred_date,
+       department = department == null ? null : new DepartmentDtos
+       {
+         id = department.id,
+         department_name = department.department_name,
+         is_active = department.is_active
+       },
 
-   Status = status == null ? null : new StatusesDtos
-   {
-     id = status.id,
-     status = status.status,
-     is_active = status.is_active
-   }
- }
-).Where(d => d.assign_to == userid).ToListAsync();
+       Status = status == null ? null : new StatusesDtos
+       {
+         id = status.id,
+         status = status.status,
+         is_active = status.is_active
+       }
+     }
+ ).Where(d => d.assign_to == userid).ToListAsync();
 
       return allBookings;
     }

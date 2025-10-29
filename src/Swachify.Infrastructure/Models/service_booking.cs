@@ -9,10 +9,6 @@ public partial class service_booking
 
     public string? booking_id { get; set; }
 
-    public long dept_id { get; set; }
-
-    public long service_id { get; set; }
-
     public long slot_id { get; set; }
 
     public long? created_by { get; set; }
@@ -41,19 +37,27 @@ public partial class service_booking
 
     public bool? unavailable { get; set; }
 
-    public bool? is_regular { get; set; }
+    public long? service_type_id { get; set; }
 
-    public bool? is_premium { get; set; }
+    public decimal? total { get; set; }
 
-    public bool? is_ultimate { get; set; }
+    public decimal? subtotal { get; set; }
+
+    public decimal? customer_requested_amount { get; set; }
+
+    public decimal? discount_amount { get; set; }
+
+    public decimal? discount_percentage { get; set; }
+
+    public decimal? discount_total { get; set; }
 
     public virtual user_registration? created_byNavigation { get; set; }
 
-    public virtual master_department dept { get; set; } = null!;
-
     public virtual user_registration? modified_byNavigation { get; set; }
 
-    public virtual master_service service { get; set; } = null!;
+    public virtual ICollection<service_tracking> service_trackings { get; set; } = new List<service_tracking>();
+
+    public virtual master_service_type? service_type { get; set; }
 
     public virtual master_slot slot { get; set; } = null!;
 

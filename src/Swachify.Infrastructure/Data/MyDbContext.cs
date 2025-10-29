@@ -30,7 +30,7 @@ public partial class MyDbContext : DbContext
 
     public virtual DbSet<master_service> master_services { get; set; }
 
-    public virtual DbSet<master_service_mapping> master_service_mappings { get; set; }
+    public virtual DbSet<master_service_type> master_service_types { get; set; }
 
     public virtual DbSet<master_slot> master_slots { get; set; }
 
@@ -39,6 +39,8 @@ public partial class MyDbContext : DbContext
     public virtual DbSet<otp_history> otp_histories { get; set; }
 
     public virtual DbSet<service_booking> service_bookings { get; set; }
+
+    public virtual DbSet<service_tracking> service_trackings { get; set; }
 
     public virtual DbSet<user_auth> user_auths { get; set; }
 
@@ -151,32 +153,25 @@ public partial class MyDbContext : DbContext
 
             entity.ToTable("master_service");
 
-            entity.HasIndex(e => e.service_name, "uk_master_service_service_name").IsUnique();
+            entity.HasIndex(e => new { e.service_name, e.dept_id }, "uk_master_service_service_name").IsUnique();
 
             entity.Property(e => e.is_active).HasDefaultValue(true);
-            entity.Property(e => e.premium).HasPrecision(10, 2);
-            entity.Property(e => e.regular).HasPrecision(10, 2);
             entity.Property(e => e.service_name).HasMaxLength(255);
-            entity.Property(e => e.ultimate).HasPrecision(10, 2);
+
+            entity.HasOne(d => d.dept).WithMany(p => p.master_services)
+                .HasForeignKey(d => d.dept_id)
+                .HasConstraintName("fk_master_service_dept_id");
         });
 
-        modelBuilder.Entity<master_service_mapping>(entity =>
+        modelBuilder.Entity<master_service_type>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("pk_master_service_mapping_id");
+            entity.HasKey(e => e.id).HasName("pk_master_service_type_id");
 
-            entity.ToTable("master_service_mapping");
+            entity.ToTable("master_service_type");
 
             entity.Property(e => e.is_active).HasDefaultValue(true);
-
-            entity.HasOne(d => d.dept).WithMany(p => p.master_service_mappings)
-                .HasForeignKey(d => d.dept_id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("fk_master_service_mapping_dept_id");
-
-            entity.HasOne(d => d.service).WithMany(p => p.master_service_mappings)
-                .HasForeignKey(d => d.service_id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("fk_master_service_mapping_service_id");
+            entity.Property(e => e.price).HasPrecision(10, 2);
+            entity.Property(e => e.service_type).HasMaxLength(255);
         });
 
         modelBuilder.Entity<master_slot>(entity =>
@@ -238,29 +233,29 @@ public partial class MyDbContext : DbContext
             entity.Property(e => e.created_date)
                 .HasDefaultValueSql("now()")
                 .HasColumnType("timestamp without time zone");
+            entity.Property(e => e.customer_requested_amount).HasPrecision(10, 2);
+            entity.Property(e => e.discount_amount).HasPrecision(10, 2);
+            entity.Property(e => e.discount_percentage).HasPrecision(10, 2);
+            entity.Property(e => e.discount_total).HasPrecision(10, 2);
             entity.Property(e => e.email).HasMaxLength(100);
             entity.Property(e => e.full_name).HasMaxLength(255);
             entity.Property(e => e.is_active).HasDefaultValue(true);
             entity.Property(e => e.modified_date).HasColumnType("timestamp without time zone");
             entity.Property(e => e.phone).HasMaxLength(15);
+            entity.Property(e => e.subtotal).HasPrecision(10, 2);
+            entity.Property(e => e.total).HasPrecision(10, 2);
 
             entity.HasOne(d => d.created_byNavigation).WithMany(p => p.service_bookingcreated_byNavigations)
                 .HasForeignKey(d => d.created_by)
                 .HasConstraintName("fk_customer_complaints_created_by");
 
-            entity.HasOne(d => d.dept).WithMany(p => p.service_bookings)
-                .HasForeignKey(d => d.dept_id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("fk_service_booking_dept_id");
-
             entity.HasOne(d => d.modified_byNavigation).WithMany(p => p.service_bookingmodified_byNavigations)
                 .HasForeignKey(d => d.modified_by)
                 .HasConstraintName("fk_customer_complaints_modified_by");
 
-            entity.HasOne(d => d.service).WithMany(p => p.service_bookings)
-                .HasForeignKey(d => d.service_id)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("fk_service_booking_service_id");
+            entity.HasOne(d => d.service_type).WithMany(p => p.service_bookings)
+                .HasForeignKey(d => d.service_type_id)
+                .HasConstraintName("fk_service_booking_service_type_id");
 
             entity.HasOne(d => d.slot).WithMany(p => p.service_bookings)
                 .HasForeignKey(d => d.slot_id)
@@ -270,6 +265,41 @@ public partial class MyDbContext : DbContext
             entity.HasOne(d => d.status).WithMany(p => p.service_bookings)
                 .HasForeignKey(d => d.status_id)
                 .HasConstraintName("fk_service_booking_status_id");
+        });
+
+        modelBuilder.Entity<service_tracking>(entity =>
+        {
+            entity.HasKey(e => e.id).HasName("pk_service_tracking_id");
+
+            entity.ToTable("service_tracking");
+
+            entity.Property(e => e.booking_id).HasMaxLength(100);
+            entity.Property(e => e.created_date)
+                .HasDefaultValueSql("now()")
+                .HasColumnType("timestamp without time zone");
+            entity.Property(e => e.is_active).HasDefaultValue(true);
+            entity.Property(e => e.modified_date).HasColumnType("timestamp without time zone");
+
+            entity.HasOne(d => d.dept).WithMany(p => p.service_trackings)
+                .HasForeignKey(d => d.dept_id)
+                .HasConstraintName("fk_service_tracking_dept_id");
+
+            entity.HasOne(d => d.service_booking).WithMany(p => p.service_trackings)
+                .HasForeignKey(d => d.service_booking_id)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_service_tracking_service_booking_id");
+
+            entity.HasOne(d => d.service).WithMany(p => p.service_trackings)
+                .HasForeignKey(d => d.service_id)
+                .HasConstraintName("fk_service_tracking_service_id");
+
+            entity.HasOne(d => d.service_type).WithMany(p => p.service_trackings)
+                .HasForeignKey(d => d.service_type_id)
+                .HasConstraintName("fk_service_tracking_service_type_id");
+
+            entity.HasOne(d => d.status).WithMany(p => p.service_trackings)
+                .HasForeignKey(d => d.status_id)
+                .HasConstraintName("fk_service_tracking_status_id");
         });
 
         modelBuilder.Entity<user_auth>(entity =>
