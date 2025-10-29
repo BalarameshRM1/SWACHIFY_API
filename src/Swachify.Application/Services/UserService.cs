@@ -105,7 +105,7 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
             .GroupBy(x => x.user_id)
             .ToDictionary(g => g.Key, g => g.Select(x => x.department_name).ToList());
 
-        var assignedUsersid = await db.service_bookings.Where(d => (d.status_id == 1 || d.service_id == 2 || d.status_id == 3) && d.is_active == true).Select(s => s.assign_to).Distinct().ToArrayAsync();
+        var assignedUsersid = await db.service_bookings.Where(d => (d.status_id == 1 || d.status_id == 2 || d.status_id == 3) && d.is_active == true).Select(s => s.assign_to).Distinct().ToArrayAsync();
 
         var allUsers = users
         .Select(u => new AllUserDtos
@@ -281,7 +281,7 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
         existing.status_id = 2;
         existing.assign_to = user_id;
         await db.SaveChangesAsync();
-        var serviceName = await db.master_departments.FirstOrDefaultAsync(d => d.id == existing.service_id);
+        var serviceName = await db.master_departments.FirstOrDefaultAsync(d => d.id == existing.id);
         var slotvalue = await db.master_slots.FirstOrDefaultAsync(d => d.id == existing.slot_id);
         var agent = await db.user_registrations.FirstOrDefaultAsync(db => db.id == existing.assign_to);
         var location = await db.master_locations.FirstOrDefaultAsync(db => db.id == agent.id);

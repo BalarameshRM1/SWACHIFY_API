@@ -3,8 +3,6 @@
     public record BookingDto(
         long Id,
         string? BookingId,
-        long DeptId,
-        long ServiceId,
         long SlotId,
         long? CreatedBy,
         DateTime? CreatedDate,
@@ -12,16 +10,24 @@
         DateTime? ModifiedDate,
         bool? IsActive,
         DateOnly? PreferredDate,
-           string? full_name,
-     string? phone,
-     string? email,
-     string? address,
+        string? full_name,
+        string? phone,
+        string? email,
+        string? address,
+        long? status_id,
+decimal? total,
+decimal? subtotal,
+decimal? customer_requested_amount,
+decimal? discount_amount,
+decimal? discount_percentage,
+decimal? discount_total,
+List<Service> Services
+    );
 
-long? status_id,
-   bool? is_regular ,
-
-     bool? is_premium ,
-
-     bool? is_ultimate 
+    public record Service
+    (
+        long deptId,
+        long serviceId,
+        long serviceTypeId
     );
 }

@@ -30,8 +30,13 @@ public class MasterService(MyDbContext db) : IMasterService
     {
         return await db.master_slots.ToListAsync();
     }
-public async Task<List<master_status>> GetAllStatuses()
+    public async Task<List<master_status>> GetAllStatuses()
     {
         return await db.master_statuses.ToListAsync();
+    }
+    
+    public async Task<List<master_service_type>> GetAllServiceTypes()
+    {
+        return await db.master_service_types.ToListAsync();
     }
 }

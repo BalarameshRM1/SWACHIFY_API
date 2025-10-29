@@ -35,42 +35,28 @@ namespace Swachify.Api.Controllers
         {
             var b = await _bookingService.GetByIdAsync(id, ct);
             if (b == null) return NotFound();
-
-            var dto = new BookingDto(
-                b.id,
-                b.booking_id,
-                b.dept_id,
-                b.service_id,
-                b.slot_id,
-                b.created_by,
-                b.created_date,
-                b.modified_by,
-                b.modified_date,
-                b.is_active,
-                b.preferred_date,
-                b.address,
-                b.full_name,
-                b.email,
-                b.phone,
-                b.status_id,
-
-b.is_regular,
-b.is_premium,
-b.is_ultimate
-            );
-
-            return Ok(dto);
+            return Ok(b);
         }
 
 
         [HttpPost]
         public async Task<ActionResult> Create([FromBody] BookingDto dto, CancellationToken ct)
         {
+            List<service_tracking> service_Trackings = new List<service_tracking>();
+            dto.Services.ForEach(s =>
+            {
+                var service = new service_tracking
+                {
+                    dept_id = s.deptId,
+                    service_id = s.serviceId
+                };
+
+                service_Trackings.Add(service);
+            });
+
             var booking = new service_booking
             {
                 booking_id = dto.BookingId,
-                dept_id = dto.DeptId,
-                service_id = dto.ServiceId,
                 slot_id = dto.SlotId,
                 created_by = dto.CreatedBy,
                 preferred_date = dto.PreferredDate,
@@ -80,10 +66,15 @@ b.is_ultimate
                 phone = dto.phone,
                 email = dto.email,
                 status_id = dto.status_id,
-                is_premium = dto.is_premium,
-                is_regular = dto.is_regular,
-is_ultimate=dto.is_ultimate
+                total = dto?.total,
+                subtotal = dto?.subtotal,
+                customer_requested_amount = dto?.customer_requested_amount,
+                discount_amount = dto?.discount_amount,
+                discount_percentage = dto?.discount_percentage,
+                discount_total=dto?.discount_total,
+                service_trackings = service_Trackings
             };
+
 
             var id = await _bookingService.CreateAsync(booking, ct);
             return CreatedAtAction(nameof(GetById), new { id }, id);
@@ -95,8 +86,6 @@ is_ultimate=dto.is_ultimate
         {
             var booking = new service_booking
             {
-                dept_id = dto.DeptId,
-                service_id = dto.ServiceId,
                 slot_id = dto.SlotId,
                 modified_by = dto.ModifiedBy,
                 preferred_date = dto.PreferredDate,
@@ -105,7 +94,7 @@ is_ultimate=dto.is_ultimate
                 address = dto.address,
                 phone = dto.phone,
                 email = dto.email,
-                status_id=dto.status_id
+                status_id = dto.status_id
             };
 
             var updated = await _bookingService.UpdateAsync(id, booking, ct);
@@ -132,12 +121,12 @@ is_ultimate=dto.is_ultimate
 
             return NoContent();
         }
-        
-         [HttpPut("UpdateTicketByEmployeeInprogress/{id:long}")]
+
+        [HttpPut("UpdateTicketByEmployeeInprogress/{id:long}")]
         public async Task<ActionResult> UpdateTicketByEmployeeInprogress(long id)
         {
             var updated = await _bookingService.UpdateTicketByEmployeeInprogress(id);
-            
+
             if (!updated) return NotFound();
 
             return NoContent();

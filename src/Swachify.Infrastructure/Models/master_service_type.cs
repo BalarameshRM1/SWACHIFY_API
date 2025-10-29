@@ -3,11 +3,15 @@ using System.Collections.Generic;
 
 namespace Swachify.Infrastructure.Models;
 
-public partial class master_status
+public partial class master_service_type
 {
     public long id { get; set; }
 
-    public string status { get; set; } = null!;
+    public string service_type { get; set; } = null!;
+
+    public decimal? price { get; set; }
+
+    public int? hours { get; set; }
 
     public bool? is_active { get; set; }
 
