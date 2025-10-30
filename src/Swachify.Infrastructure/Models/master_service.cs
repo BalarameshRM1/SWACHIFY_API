@@ -15,6 +15,8 @@ public partial class master_service
 
     public virtual master_department? dept { get; set; }
 
+    public virtual ICollection<master_service_mapping> master_service_mappings { get; set; } = new List<master_service_mapping>();
+
     public virtual ICollection<service_tracking> service_trackings { get; set; } = new List<service_tracking>();
 
     public virtual ICollection<user_registration> user_registrations { get; set; } = new List<user_registration>();

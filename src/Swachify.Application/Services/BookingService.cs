@@ -3,12 +3,6 @@ using Swachify.Application.DTOs;
 using Swachify.Application.Interfaces;
 using Swachify.Infrastructure.Data;
 using Swachify.Infrastructure.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Swachify.Application.Services
 {
@@ -91,9 +85,10 @@ namespace Swachify.Application.Services
 
     public async Task<long> CreateAsync(service_booking booking, CancellationToken ct = default)
     {
+      var bookingID = Guid.NewGuid().ToString();
       booking.created_date = DateTime.Now;
       booking.is_active = true;
-      booking.booking_id ??= Guid.NewGuid().ToString();
+      booking.booking_id ??= bookingID;
       booking.full_name = booking.full_name;
       booking.address = booking.address;
       booking.phone = booking.phone;
@@ -110,20 +105,18 @@ namespace Swachify.Application.Services
 
       await _db.SaveChangesAsync(ct);
 
-      foreach (var item in booking.service_trackings)
-      {
-        var serviceTracking = new service_tracking
-        {
-          booking_id = booking.booking_id,
-          dept_id = item.dept_id,
-          service_id = item.service_id,
-          service_type_id = item.service_type_id,
-        };
-        _db.service_trackings.Add(serviceTracking);
-        await _db.SaveChangesAsync(ct);
-
-      }
-
+      var newTrackings = booking.service_trackings
+    .Select(item => new service_tracking
+    {
+      service_booking_id = booking.id,
+      booking_id = bookingID,
+      dept_id = item.dept_id,
+      service_id = item.service_id,
+      service_type_id = item.service_type_id,
+    })
+    .ToList();
+      _db.service_trackings.AddRange(newTrackings);
+      await _db.SaveChangesAsync(ct);
 
       if (!string.IsNullOrEmpty(booking.email))
       {
