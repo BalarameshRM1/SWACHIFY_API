@@ -20,22 +20,13 @@ namespace Swachify.Api.Controllers
         [HttpGet("getall")]
         public async Task<ActionResult> GetAll(CancellationToken ct)
         {
-            return Ok(await _bookingService.GetAllAsync(ct));
+            return Ok(await _bookingService.GetAllBookingsAsync(ct));
         }
 
         [HttpGet("getallbookingsbyuserID")]
-        public async Task<ActionResult> getallbookingsbyuserID(long id)
+        public async Task<ActionResult> getallbookingsbyuserID(long user_id,long emp_id)
         {
-            return Ok(await _bookingService.GetAllBookingByUserIDAsync(id));
-        }
-
-
-        [HttpGet("{id:long}")]
-        public async Task<ActionResult<BookingDto>> GetById(long id, CancellationToken ct)
-        {
-            var b = await _bookingService.GetByIdAsync(id, ct);
-            if (b == null) return NotFound();
-            return Ok(b);
+            return Ok(await _bookingService.GetAllBookingByUserIDAsync(user_id,emp_id));
         }
 
 
@@ -77,7 +68,7 @@ namespace Swachify.Api.Controllers
 
 
             var id = await _bookingService.CreateAsync(booking, ct);
-            return CreatedAtAction(nameof(GetById), new { id }, id);
+            return Ok(id);
         }
 
 

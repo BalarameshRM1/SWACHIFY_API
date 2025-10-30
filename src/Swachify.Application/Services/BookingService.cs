@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿
+
+using Microsoft.EntityFrameworkCore;
 using Swachify.Application.DTOs;
 using Swachify.Application.Interfaces;
 using Swachify.Infrastructure.Data;
@@ -17,71 +19,32 @@ namespace Swachify.Application.Services
       _emailService = emailService;
     }
 
-    public async Task<List<AllBookingsDtos>> GetAllAsync(CancellationToken ct = default)
+    public async Task<List<AllBookingsDtos>> GetAllBookingsAsync(CancellationToken ct = default)
     {
-      var allBookings = await (
-          from b in _db.service_bookings.AsNoTracking()
-          from st in _db.service_trackings.AsNoTracking()
-          join d in _db.master_departments.AsNoTracking()
-              on st.dept_id equals d.id into deptJoin
-          from department in deptJoin.DefaultIfEmpty()
+      return await _db.Database.SqlQueryRaw<AllBookingsDtos>(DbConstants.fn_service_booking_list).ToListAsync();
+    }
+    public async Task<List<AllBookingsDtos>> GetAllBookingByUserIDAsync(long userid, long empid)
+    {
+      string query = string.Empty;
+      if (userid > 0 && empid > 0)
+      {
+        query = string.Format(DbConstants.fn_service_booking_list_by_Userid_Empid, userid, empid);
+      }
+      else if (userid > 0)
+      {
+        query = string.Format(DbConstants.fn_service_booking_list_by_Userid, userid);
 
-          join s in _db.master_statuses.AsNoTracking()
-              on b.status_id equals s.id into statusJoin
-          from status in statusJoin.DefaultIfEmpty()
+      }
+      else if (empid > 0)
+      {
+        query = string.Format(DbConstants.fn_service_booking_list_by_Empid, empid);
 
-          join u in _db.user_registrations.AsNoTracking()
-              on b.created_by equals u.id into userJoin
-          from user in userJoin.DefaultIfEmpty()
+      }
 
-          join assign in _db.user_registrations.AsNoTracking()
-                  on b.assign_to equals assign.id into AssignuserJoin
-          from assignUser in AssignuserJoin.DefaultIfEmpty()
-          select new AllBookingsDtos
-          {
-            id = b.id,
-            address = b.address,
-            assign_to = b.assign_to,
-            assign_to_name = assignUser != null ? assignUser.first_name + " " + assignUser.last_name : null,
-            created_by = b.created_by,
-            created_by_name = user != null ? user.first_name + " " + user.last_name : null,
-            created_date = b.created_date,
-            email = b.email,
-            full_name = b.full_name,
-            is_active = b.is_active,
-            modified_by = b.modified_by,
-            phone = b.phone,
-            status_id = b.status_id,
-            slot_id = b.slot_id,
-            modified_date = b.modified_date,
-            preferred_date = b.preferred_date,
-
-            department = department == null ? null : new DepartmentDtos
-            {
-              id = department.id,
-              department_name = department.department_name,
-              is_active = department.is_active
-            },
-
-            Status = status == null ? null : new StatusesDtos
-            {
-              id = status.id,
-              status = status.status,
-              is_active = status.is_active
-            }
-          }
-      ).ToListAsync(ct);
-
-      return allBookings;
+      return await _db.Database.SqlQueryRaw<AllBookingsDtos>(query).ToListAsync();
     }
 
 
-
-    public async Task<service_booking?> GetByIdAsync(long id, CancellationToken ct = default)
-    {
-      return await _db.service_bookings
-          .FirstOrDefaultAsync(b => b.id == id, ct);
-    }
 
     public async Task<long> CreateAsync(service_booking booking, CancellationToken ct = default)
     {
@@ -164,63 +127,7 @@ namespace Swachify.Application.Services
       return true;
     }
 
-    public async Task<List<AllBookingsDtos>> GetAllBookingByUserIDAsync(long userid)
-    {
-      var allBookings = await (
-     from b in _db.service_bookings.AsNoTracking()
-     from st in _db.service_trackings.AsNoTracking()
-     join d in _db.master_departments.AsNoTracking()
-    on st.dept_id equals d.id into deptJoin
-     from department in deptJoin.DefaultIfEmpty()
 
-     join s in _db.master_statuses.AsNoTracking()
-     on b.status_id equals s.id into statusJoin
-     from status in statusJoin.DefaultIfEmpty()
-
-     join u in _db.user_registrations.AsNoTracking()
-     on b.created_by equals u.id into userJoin
-     from user in userJoin.DefaultIfEmpty()
-
-     join assign in _db.user_registrations.AsNoTracking()
-     on b.assign_to equals assign.id into AssignuserJoin
-     from assignUser in AssignuserJoin.DefaultIfEmpty()
-
-     select new AllBookingsDtos
-     {
-       id = b.id,
-       address = b.address,
-       assign_to = b.assign_to,
-       assign_to_name = assignUser != null ? assignUser.first_name + " " + assignUser.last_name : null,
-       created_by = b.created_by,
-       created_by_name = user != null ? user.first_name + " " + user.last_name : null,
-       created_date = b.created_date,
-       email = b.email,
-       full_name = b.full_name,
-       is_active = b.is_active,
-       modified_by = b.modified_by,
-       phone = b.phone,
-       status_id = b.status_id,
-       slot_id = b.slot_id,
-       modified_date = b.modified_date,
-       preferred_date = b.preferred_date,
-       department = department == null ? null : new DepartmentDtos
-       {
-         id = department.id,
-         department_name = department.department_name,
-         is_active = department.is_active
-       },
-
-       Status = status == null ? null : new StatusesDtos
-       {
-         id = status.id,
-         status = status.status,
-         is_active = status.is_active
-       }
-     }
- ).Where(d => d.assign_to == userid).ToListAsync();
-
-      return allBookings;
-    }
 
     public async Task<bool> UpdateTicketByEmployeeInprogress(long id)
     {
