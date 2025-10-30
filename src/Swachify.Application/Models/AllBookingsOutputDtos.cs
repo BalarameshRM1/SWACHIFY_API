@@ -2,7 +2,7 @@ using Swachify.Infrastructure.Models;
 
 namespace Swachify.Application.DTOs;
 
-public class AllBookingsDtos
+public class AllBookingsOutputDtos
 {
     public long id { get; set; }
 
@@ -45,9 +45,19 @@ public class AllBookingsDtos
     public string? customer_name { get; set; }
 
     public DateTime? created_date { get; set; }
+
+    public List<BookingServiceDto> services { get; set; } = new();
+
 }
 
-
+public class BookingServiceDto
+{
+    public long? dept_id { get; set; }
+    public string department_name { get; set; }
+    public long? service_id { get; set; }
+    public string service_name { get; set; }
+    public long? service_type_id { get; set; }
+}
 
 
 
