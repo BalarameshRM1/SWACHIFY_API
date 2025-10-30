@@ -19,11 +19,55 @@ namespace Swachify.Application.Services
       _emailService = emailService;
     }
 
-    public async Task<List<AllBookingsDtos>> GetAllBookingsAsync(CancellationToken ct = default)
+    public async Task<List<AllBookingsOutputDtos>> GetAllBookingsAsync(CancellationToken ct = default)
     {
-      return await _db.Database.SqlQueryRaw<AllBookingsDtos>(DbConstants.fn_service_booking_list).ToListAsync();
+
+      var rawData = await _db.Database.SqlQueryRaw<AllBookingsDtos>(DbConstants.fn_service_booking_list).ToListAsync();
+
+      var groupedResult = rawData
+        .GroupBy(x => x.id)
+        .Select(g => new AllBookingsOutputDtos
+        {
+          id = g.Key,
+          booking_id = g.First().booking_id,
+          slot_id = g.First().slot_id,
+          slot_time = g.First().slot_time,
+          full_name = g.First().full_name,
+          phone = g.First().phone,
+          email = g.First().email,
+          address = g.First().address,
+          status_id = g.First().status_id,
+          assign_to = g.First().assign_to,
+          employee_name = g.First().employee_name,
+          status = g.First().status,
+          total = g.First().total,
+          subtotal = g.First().subtotal,
+          customer_requested_amount = g.First().customer_requested_amount,
+          discount_amount = g.First().discount_amount,
+          discount_percentage = g.First().discount_percentage,
+          discount_total = g.First().discount_total,
+          created_by = g.First().created_by,
+          customer_name = g.First().customer_name,
+          created_date = g.First().created_date,
+
+          // Merge distinct department/service details
+          services = g.Select(x => new BookingServiceDto
+          {
+            dept_id = x.dept_id,
+            department_name = x.department_name,
+            service_id = x.service_id,
+            service_name = x.service_name,
+            service_type_id = x.service_type_id
+          })
+            .DistinctBy(s => new { s.dept_id, s.service_id }) // requires .NET 6+
+            .ToList()
+        })
+        .ToList();
+
+      return groupedResult;
     }
-    public async Task<List<AllBookingsDtos>> GetAllBookingByUserIDAsync(long userid, long empid)
+    
+    public async Task<List<AllBookingsOutputDtos>> GetAllBookingByUserIDAsync(long userid, long empid)
     {
       string query = string.Empty;
       if (userid > 0 && empid > 0)
@@ -41,7 +85,47 @@ namespace Swachify.Application.Services
 
       }
 
-      return await _db.Database.SqlQueryRaw<AllBookingsDtos>(query).ToListAsync();
+      var rawData =  await _db.Database.SqlQueryRaw<AllBookingsDtos>(query).ToListAsync();
+
+      return rawData
+        .GroupBy(x => x.id)
+        .Select(g => new AllBookingsOutputDtos
+        {
+          id = g.Key,
+          booking_id = g.First().booking_id,
+          slot_id = g.First().slot_id,
+          slot_time = g.First().slot_time,
+          full_name = g.First().full_name,
+          phone = g.First().phone,
+          email = g.First().email,
+          address = g.First().address,
+          status_id = g.First().status_id,
+          assign_to = g.First().assign_to,
+          employee_name = g.First().employee_name,
+          status = g.First().status,
+          total = g.First().total,
+          subtotal = g.First().subtotal,
+          customer_requested_amount = g.First().customer_requested_amount,
+          discount_amount = g.First().discount_amount,
+          discount_percentage = g.First().discount_percentage,
+          discount_total = g.First().discount_total,
+          created_by = g.First().created_by,
+          customer_name = g.First().customer_name,
+          created_date = g.First().created_date,
+
+          // Merge distinct department/service details
+          services = g.Select(x => new BookingServiceDto
+          {
+            dept_id = x.dept_id,
+            department_name = x.department_name,
+            service_id = x.service_id,
+            service_name = x.service_name,
+            service_type_id = x.service_type_id
+          })
+            .DistinctBy(s => new { s.dept_id, s.service_id }) // requires .NET 6+
+            .ToList()
+        })
+        .ToList();
     }
 
 
