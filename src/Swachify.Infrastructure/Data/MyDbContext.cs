@@ -30,6 +30,8 @@ public partial class MyDbContext : DbContext
 
     public virtual DbSet<master_service> master_services { get; set; }
 
+    public virtual DbSet<master_service_mapping> master_service_mappings { get; set; }
+
     public virtual DbSet<master_service_type> master_service_types { get; set; }
 
     public virtual DbSet<master_slot> master_slots { get; set; }
@@ -161,6 +163,27 @@ public partial class MyDbContext : DbContext
             entity.HasOne(d => d.dept).WithMany(p => p.master_services)
                 .HasForeignKey(d => d.dept_id)
                 .HasConstraintName("fk_master_service_dept_id");
+        });
+
+        modelBuilder.Entity<master_service_mapping>(entity =>
+        {
+            entity.HasKey(e => e.id).HasName("pk_master_service_mapping_id");
+
+            entity.ToTable("master_service_mapping");
+
+            entity.HasIndex(e => new { e.service_type_id, e.service_id }, "uk_master_service_mapping_service_id_service_type_id").IsUnique();
+
+            entity.Property(e => e.is_active).HasDefaultValue(true);
+
+            entity.HasOne(d => d.service).WithMany(p => p.master_service_mappings)
+                .HasForeignKey(d => d.service_id)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_master_service_mapping_service_id");
+
+            entity.HasOne(d => d.service_type).WithMany(p => p.master_service_mappings)
+                .HasForeignKey(d => d.service_type_id)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("fk_master_service_mapping_service_type_id");
         });
 
         modelBuilder.Entity<master_service_type>(entity =>
