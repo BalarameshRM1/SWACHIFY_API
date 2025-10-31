@@ -274,43 +274,7 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
     }
 
 
-    public async Task<bool> AssignEmployee(long id, long user_id)
-    {
-        var existing = await db.service_bookings.FirstOrDefaultAsync(b => b.id == id);
-        if (existing == null) return false;
-        existing.status_id = 2;
-        existing.assign_to = user_id;
-        await db.SaveChangesAsync();
-        var serviceName = await db.master_departments.FirstOrDefaultAsync(d => d.id == existing.id);
-        var slotvalue = await db.master_slots.FirstOrDefaultAsync(d => d.id == existing.slot_id);
-        var agent = await db.user_registrations.FirstOrDefaultAsync(db => db.id == existing.assign_to);
-        var location = await db.master_locations.FirstOrDefaultAsync(db => db.id == agent.id);
-        var mailtemplate = await db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.CustomerAssignedAgent);
-        string emailBody = mailtemplate.description
-        .Replace("{0}", existing?.full_name)
-        .Replace("{1}", agent?.first_name + " " + agent?.last_name)
-        .Replace("{2}", existing.preferred_date.ToString() + " " + slotvalue.slot_time.ToString())
-        .Replace("{3}", serviceName?.department_name)
-        .Replace("{4}", location?.location_name);
-        if (mailtemplate != null)
-        {
-            await email.SendEmailAsync(existing.email, AppConstants.CustomerAssignedAgent, emailBody);
-        }
-        var agentmailtemplate = await db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.EMPAssignmentMail);
-        string agentEmailBody = agentmailtemplate?.description.ToString()
-         .Replace("{0}", existing?.id.ToString())
-         .Replace("{1}", agent?.first_name + " " + agent?.last_name)
-         .Replace("{2}", existing?.id.ToString())
-         .Replace("{3}", existing?.full_name)
-        .Replace("{4}", location?.location_name)
-        .Replace("{5}", existing.preferred_date.ToString() + "  " + slotvalue.slot_time.ToString());
-        var subject = $"New Service Assigned - {existing?.id}";
-        if (mailtemplate != null)
-        {
-            await email.SendEmailAsync(agent.email, subject, agentEmailBody);
-        }
-        return true;
-    }
+    
 
     public async Task<bool> UpdateUserAsync(long id, EmpCommandDto cmd)
     {

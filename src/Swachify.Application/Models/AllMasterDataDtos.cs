@@ -106,3 +106,5 @@ public class masterStatusDto
     [JsonProperty("is_active")]
     public bool? IsActive { get; set; }
 }
+
+public record MaserServiceDto(string department_name,string service_name, string cleaning_type_name,decimal price);

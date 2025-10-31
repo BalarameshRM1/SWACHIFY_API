@@ -8,73 +8,26 @@ using Swachify.Infrastructure.Models;
 
 namespace Swachify.Application.Services
 {
-  public class BookingService : IBookingService
+  public class BookingService(MyDbContext _db, IEmailService _emailService) : IBookingService
   {
-    private readonly MyDbContext _db;
-    private readonly IEmailService _emailService;
-
-    public BookingService(MyDbContext db, IEmailService emailService)
-    {
-      _db = db;
-      _emailService = emailService;
-    }
-
     public async Task<List<AllBookingsOutputDtos>> GetAllBookingsAsync(CancellationToken ct = default)
     {
 
       var rawData = await _db.Database.SqlQueryRaw<AllBookingsDtos>(DbConstants.fn_service_booking_list).ToListAsync();
-
-      var groupedResult = rawData
-        .GroupBy(x => x.id)
-        .Select(g => new AllBookingsOutputDtos
-        {
-          id = g.Key,
-          booking_id = g.First().booking_id,
-          slot_id = g.First().slot_id,
-          slot_time = g.First().slot_time,
-          full_name = g.First().full_name,
-          phone = g.First().phone,
-          email = g.First().email,
-          address = g.First().address,
-          status_id = g.First().status_id,
-          assign_to = g.First().assign_to,
-          employee_name = g.First().employee_name,
-          status = g.First().status,
-          total = g.First().total,
-          subtotal = g.First().subtotal,
-          customer_requested_amount = g.First().customer_requested_amount,
-          discount_amount = g.First().discount_amount,
-          discount_percentage = g.First().discount_percentage,
-          discount_total = g.First().discount_total,
-          created_by = g.First().created_by,
-          customer_name = g.First().customer_name,
-          created_date = g.First().created_date,
-
-          // Merge distinct department/service details
-          services = g.Select(x => new BookingServiceDto
-          {
-            dept_id = x.dept_id,
-            department_name = x.department_name,
-            service_id = x.service_id,
-            service_name = x.service_name,
-            service_type_id = x.service_type_id
-          })
-            .DistinctBy(s => new { s.dept_id, s.service_id }) // requires .NET 6+
-            .ToList()
-        })
-        .ToList();
-
-      return groupedResult;
+      return await MappingBookingData(rawData);
     }
-    
+
+    public async Task<List<AllBookingsOutputDtos>> GetAllBookingByBookingIDAsync(long bookingId)
+    {
+      string query = string.Format(DbConstants.fn_service_booking_get_list_by_booking_id, bookingId);
+      var rawData = await _db.Database.SqlQueryRaw<AllBookingsDtos>(query).ToListAsync();
+      return await MappingBookingData(rawData);
+    }
+
     public async Task<List<AllBookingsOutputDtos>> GetAllBookingByUserIDAsync(long userid, long empid)
     {
       string query = string.Empty;
-      if (userid > 0 && empid > 0)
-      {
-        query = string.Format(DbConstants.fn_service_booking_list_by_Userid_Empid, userid, empid);
-      }
-      else if (userid > 0)
+      if (userid > 0)
       {
         query = string.Format(DbConstants.fn_service_booking_list_by_Userid, userid);
 
@@ -84,51 +37,10 @@ namespace Swachify.Application.Services
         query = string.Format(DbConstants.fn_service_booking_list_by_Empid, empid);
 
       }
+      var rawData = await _db.Database.SqlQueryRaw<AllBookingsDtos>(query).ToListAsync();
 
-      var rawData =  await _db.Database.SqlQueryRaw<AllBookingsDtos>(query).ToListAsync();
-
-      return rawData
-        .GroupBy(x => x.id)
-        .Select(g => new AllBookingsOutputDtos
-        {
-          id = g.Key,
-          booking_id = g.First().booking_id,
-          slot_id = g.First().slot_id,
-          slot_time = g.First().slot_time,
-          full_name = g.First().full_name,
-          phone = g.First().phone,
-          email = g.First().email,
-          address = g.First().address,
-          status_id = g.First().status_id,
-          assign_to = g.First().assign_to,
-          employee_name = g.First().employee_name,
-          status = g.First().status,
-          total = g.First().total,
-          subtotal = g.First().subtotal,
-          customer_requested_amount = g.First().customer_requested_amount,
-          discount_amount = g.First().discount_amount,
-          discount_percentage = g.First().discount_percentage,
-          discount_total = g.First().discount_total,
-          created_by = g.First().created_by,
-          customer_name = g.First().customer_name,
-          created_date = g.First().created_date,
-
-          // Merge distinct department/service details
-          services = g.Select(x => new BookingServiceDto
-          {
-            dept_id = x.dept_id,
-            department_name = x.department_name,
-            service_id = x.service_id,
-            service_name = x.service_name,
-            service_type_id = x.service_type_id
-          })
-            .DistinctBy(s => new { s.dept_id, s.service_id }) // requires .NET 6+
-            .ToList()
-        })
-        .ToList();
+      return await MappingBookingData(rawData);
     }
-
-
 
     public async Task<long> CreateAsync(service_booking booking, CancellationToken ct = default)
     {
@@ -212,7 +124,48 @@ namespace Swachify.Application.Services
     }
 
 
+    private async Task<List<AllBookingsOutputDtos>> MappingBookingData(List<AllBookingsDtos> rawData)
+    {
+      return rawData
+  .GroupBy(x => x.id)
+  .Select(g => new AllBookingsOutputDtos
+  {
+    id = g.Key,
+    booking_id = g.First().booking_id,
+    slot_id = g.First().slot_id,
+    slot_time = g.First().slot_time,
+    full_name = g.First().full_name,
+    phone = g.First().phone,
+    email = g.First().email,
+    address = g.First().address,
+    status_id = g.First().status_id,
+    assign_to = g.First().assign_to,
+    employee_name = g.First().employee_name,
+    employee_email = g.First().employee_email,
+    status = g.First().status,
+    total = g.First().total,
+    subtotal = g.First().subtotal,
+    customer_requested_amount = g.First().customer_requested_amount,
+    discount_amount = g.First().discount_amount,
+    discount_percentage = g.First().discount_percentage,
+    discount_total = g.First().discount_total,
+    created_by = g.First().created_by,
+    customer_name = g.First().customer_name,
+    created_date = g.First().created_date,
 
+    services = g.Select(x => new BookingServiceDto
+    {
+      dept_id = x.dept_id,
+      department_name = x.department_name,
+      service_id = x.service_id,
+      service_name = x.service_name,
+      service_type_id = x.service_type_id
+    })
+      .DistinctBy(s => new { s.dept_id, s.service_id })
+      .ToList()
+  })
+  .ToList();
+    }
     public async Task<bool> UpdateTicketByEmployeeInprogress(long id)
     {
       var existing = await _db.service_bookings.FirstOrDefaultAsync(b => b.id == id);
@@ -240,5 +193,51 @@ namespace Swachify.Application.Services
 
       return true;
     }
+    public async Task<bool> AssignEmployee(long id, long user_id)
+    {
+      var existing = await _db.service_bookings.FirstOrDefaultAsync(b => b.id == id);
+      if (existing == null) return false;
+      existing.status_id = 2;
+      existing.assign_to = user_id;
+      await _db.SaveChangesAsync();
+
+      var resultBookings = await GetAllBookingByBookingIDAsync(id);
+      var departnames =string.Join(",", resultBookings
+    .Where(b => b?.services != null)
+    .SelectMany(b => b.services)
+    .Select(s => s?.department_name)
+    .Where(name => !string.IsNullOrEmpty(name))
+    .ToList()) ;
+      var mailtemplate = await _db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.CustomerAssignedAgent);
+      var agentemail = resultBookings.FirstOrDefault().employee_email;
+      var agentname = resultBookings.FirstOrDefault().employee_name;
+
+      string emailBody = mailtemplate.description
+      .Replace("{0}", existing?.full_name)
+      .Replace("{1}", agentname)
+      .Replace("{2}", existing.preferred_date.ToString() ?? DateTime.Now.ToString())
+      .Replace("{3}", departnames)
+      .Replace("{4}", "India");
+      if (mailtemplate != null)
+      {
+        await _emailService.SendEmailAsync(existing.email, AppConstants.CustomerAssignedAgent, emailBody);
+      }
+      var agentmailtemplate = await _db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.EMPAssignmentMail);
+      string agentEmailBody = agentmailtemplate?.description.ToString()
+       .Replace("{0}", existing?.id.ToString() + " (" + departnames + ")")
+       .Replace("{1}", agentname)
+       .Replace("{2}", existing?.id.ToString())
+       .Replace("{3}", existing?.full_name)
+      .Replace("{4}", "India")
+      .Replace("{5}", existing.preferred_date.ToString());
+
+      var subject = $"New Service Assigned - {existing?.id}";
+      if (mailtemplate != null)
+      {
+        await _emailService.SendEmailAsync(agentemail, subject, agentEmailBody);
+      }
+      return true;
+    }
+
   }
 }

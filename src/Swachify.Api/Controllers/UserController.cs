@@ -1,12 +1,13 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Swachify.Application;
+using Swachify.Application.Interfaces;
 
 namespace Swachify.Api;
 
 [ApiController]
 [Route("api/[controller]")]
-public class UserController(IUserService userService) : ControllerBase
+public class UserController(IUserService userService,IBookingService bookingService) : ControllerBase
 {
     [HttpPost("register")]
     public async Task<IActionResult> UserRegister(UserCommandDto userCommandDto)
@@ -46,7 +47,7 @@ public class UserController(IUserService userService) : ControllerBase
     [HttpPost("assignemployee")]
     public async Task<IActionResult> AssignEmployee(AssignEmpDto commandDto)
     {
-        var result = await userService.AssignEmployee(commandDto.id, commandDto.user_id);
+        var result = await bookingService.AssignEmployee(commandDto.id, commandDto.user_id);
         if (result == null) return Forbid();
         return Ok(result);
     }
