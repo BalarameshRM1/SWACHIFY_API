@@ -13,7 +13,7 @@ public class MasterController(IMasterService masterService) : ControllerBase
         return Ok(await masterService.GetAllMasterDatasAsync());
     }
 
-    [HttpGet("createmasterData")]
+    [HttpPost("createmasterData")]
     public async Task<IActionResult> GetAllMasterData(MaserServiceDto cmd)
     {
         var result = await masterService.CreateMasterService(cmd);
