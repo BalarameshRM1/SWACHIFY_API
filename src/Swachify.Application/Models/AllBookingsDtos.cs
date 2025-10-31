@@ -33,14 +33,13 @@ public class AllBookingsDtos
     public string? service_name { get; set; }
 
     public long? service_type_id { get; set; }
-
+    public string? service_type { get; set; }
     public decimal? total { get; set; }
     public decimal? subtotal { get; set; }
     public decimal? customer_requested_amount { get; set; }
     public decimal? discount_amount { get; set; }
     public decimal? discount_percentage { get; set; }
     public decimal? discount_total { get; set; }
-
     public long? created_by { get; set; }
 
     public string? customer_name { get; set; }
