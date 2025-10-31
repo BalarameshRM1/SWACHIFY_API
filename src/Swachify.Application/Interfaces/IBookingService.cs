@@ -13,5 +13,7 @@ namespace Swachify.Application.Interfaces
         Task<bool> DeleteAsync(long id, CancellationToken ct = default);
         Task<bool> UpdateTicketByEmployeeCompleted(long id);
         Task<bool> UpdateTicketByEmployeeInprogress(long id);
+
+        Task<bool> AssignEmployee(long id, long user_id);
     }
 }

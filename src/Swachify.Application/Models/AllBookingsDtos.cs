@@ -21,6 +21,7 @@ public class AllBookingsDtos
 
     public long? assign_to { get; set; }
     public string? employee_name { get; set; }
+    public string? employee_email { get; set; }
     public string? status { get; set; }
 
     public long? dept_id { get; set; }
