@@ -39,7 +39,8 @@ namespace Swachify.Api.Controllers
                 var service = new service_tracking
                 {
                     dept_id = s.deptId,
-                    service_id = s.serviceId
+                    service_id = s.serviceId,
+                    service_type_id = s.serviceTypeId,
                 };
 
                 service_Trackings.Add(service);

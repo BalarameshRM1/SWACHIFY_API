@@ -49,6 +49,7 @@ public class AllBookingsOutputDtos
     public DateTime? created_date { get; set; }
 
     public List<BookingServiceDto> services { get; set; } = new();
+    public string? service_type { get; set; }
 
 }
 
@@ -59,6 +60,7 @@ public class BookingServiceDto
     public long? service_id { get; set; }
     public string service_name { get; set; }
     public long? service_type_id { get; set; }
+    public string? service_type { get; set; }
 }
 
 

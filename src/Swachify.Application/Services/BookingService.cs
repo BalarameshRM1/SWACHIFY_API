@@ -159,7 +159,8 @@ namespace Swachify.Application.Services
       department_name = x.department_name,
       service_id = x.service_id,
       service_name = x.service_name,
-      service_type_id = x.service_type_id
+      service_type_id = x.service_type_id,
+service_type=x.service_type
     })
       .DistinctBy(s => new { s.dept_id, s.service_id })
       .ToList()
@@ -202,12 +203,12 @@ namespace Swachify.Application.Services
       await _db.SaveChangesAsync();
 
       var resultBookings = await GetAllBookingByBookingIDAsync(id);
-      var departnames =string.Join(",", resultBookings
+   var departnames = string.Join(",", resultBookings
     .Where(b => b?.services != null)
     .SelectMany(b => b.services)
-    .Select(s => s?.department_name)
+    .Select(s => $"[{s.department_name} - {s.service_name} -{s.service_type}]")
     .Where(name => !string.IsNullOrEmpty(name))
-    .ToList()) ;
+    .ToList());
       var mailtemplate = await _db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.CustomerAssignedAgent);
       var agentemail = resultBookings.FirstOrDefault().employee_email;
       var agentname = resultBookings.FirstOrDefault().employee_name;
@@ -224,7 +225,7 @@ namespace Swachify.Application.Services
       }
       var agentmailtemplate = await _db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.EMPAssignmentMail);
       string agentEmailBody = agentmailtemplate?.description.ToString()
-       .Replace("{0}", existing?.id.ToString() + " (" + departnames + ")")
+       .Replace("{0}", existing?.id.ToString() + departnames)
        .Replace("{1}", agentname)
        .Replace("{2}", existing?.id.ToString())
        .Replace("{3}", existing?.full_name)
