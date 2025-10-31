@@ -107,4 +107,14 @@ public class masterStatusDto
     public bool? IsActive { get; set; }
 }
 
-public record MaserServiceDto(string department_name,string service_name, string cleaning_type_name,decimal price);
+public record MaserServiceDto(
+    long department_id,
+    string department_name,
+    long service_id,
+    string service_name,
+    long service_type_id,
+    string service_type_name,
+     decimal price);
+
+
+
