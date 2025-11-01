@@ -21,6 +21,8 @@ decimal? customer_requested_amount,
 decimal? discount_amount,
 decimal? discount_percentage,
 decimal? discount_total,
+    int? hours,
+     int? add_on_hours,
 List<Service> Services
     );
 
