@@ -32,18 +32,31 @@ public class MasterDepartmentDto
     [JsonProperty("department_name")]
     public string? DepartmentName { get; set; }
 
-    [JsonProperty("service_id")]
-    public long? ServiceId { get; set; }
+[JsonProperty("services")]
+    public List<ServiceDto> Services { get; set; } = new();
+
+}
+
+public class ServiceDto
+{
+     [JsonProperty("service_id")]
+    public long? ServiceID { get; set; }
 
     [JsonProperty("service_name")]
     public string? ServiceName { get; set; }
 
-    [JsonProperty("service_type_id")]
-    public long? ServiceTypeId { get; set; }
+    [JsonProperty("service_types")]
+    public List<ServiceTypeDto> ServiceTypes { get; set; } = new();
+}
+
+public class ServiceTypeDto
+{
+       [JsonProperty("service_type_id")]
+    public long? ServiceTypeID { get; set; }
 
     [JsonProperty("service_type")]
     public string? ServiceType { get; set; }
-
+    
     [JsonProperty("price")]
     public decimal? Price { get; set; }
 
