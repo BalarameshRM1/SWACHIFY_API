@@ -43,10 +43,11 @@ public class AuthService(MyDbContext db, IPasswordHasher hasher, IEmailService e
         return "Password updated successfully.";
     }
 
-    public async Task<bool> ForgotpasswordLink(long user_id)
+    public async Task<bool> ForgotpasswordLink(string user_email)
     {
-        var resetlink = config["ResetPasswordLink"] + user_id;
-        var user = await db.user_registrations.FirstOrDefaultAsync(d => d.id == user_id);
+        var user = await db.user_registrations.FirstOrDefaultAsync(d => d.email.ToUpper() == user_email.ToUpper());
+        if (user is null) return false;
+        var resetlink = config["ResetPasswordLink"] + user?.id;
         var mailtemplate = await db.booking_templates.
         FirstOrDefaultAsync(b => b.title == AppConstants.ResetEmail);
         string emailBody = mailtemplate.description
@@ -54,7 +55,7 @@ public class AuthService(MyDbContext db, IPasswordHasher hasher, IEmailService e
             .Replace("{resetLink}", resetlink);
         if (mailtemplate != null)
         {
-            await emailService.SendEmailAsync(user?.email, AppConstants.ResetEmail, emailBody);
+            await emailService.SendEmailAsync(user_email, AppConstants.ResetEmail, emailBody);
         }
         return true;
     }
