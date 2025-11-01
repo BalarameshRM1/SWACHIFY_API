@@ -31,7 +31,7 @@ public class LoginController(IAuthService authService) : ControllerBase
     public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
     {
         var result = await authService.ForgotPasswordAsync(
-            request.Email,
+            request.id,
             request.Password,
             request.ConfirmPassword
         );
