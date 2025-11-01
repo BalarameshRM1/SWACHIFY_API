@@ -45,6 +45,10 @@ public class AllBookingsDtos
     public string? customer_name { get; set; }
 
     public DateTime? created_date { get; set; }
+
+    public int? hours { get; set; }
+
+    public int? add_on_hours { get; set; }
 }
 
 

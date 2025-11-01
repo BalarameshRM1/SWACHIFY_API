@@ -51,6 +51,10 @@ public partial class service_booking
 
     public decimal? discount_total { get; set; }
 
+    public int? hours { get; set; }
+
+    public int? add_on_hours { get; set; }
+
     public virtual user_registration? created_byNavigation { get; set; }
 
     public virtual user_registration? modified_byNavigation { get; set; }

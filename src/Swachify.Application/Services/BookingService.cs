@@ -59,7 +59,9 @@ namespace Swachify.Application.Services
       booking.discount_amount = booking.discount_amount;
       booking.discount_percentage = booking.discount_percentage;
       booking.discount_total = booking.discount_total;
-
+      booking.hours = booking.hours;
+      booking.add_on_hours = booking.add_on_hours;
+      
       _db.service_bookings.Add(booking);
 
       await _db.SaveChangesAsync(ct);
@@ -152,7 +154,8 @@ namespace Swachify.Application.Services
     created_by = g.First().created_by,
     customer_name = g.First().customer_name,
     created_date = g.First().created_date,
-
+    hours = g.First().hours,
+    add_on_hours = g.First().add_on_hours,
     services = g.Select(x => new BookingServiceDto
     {
       dept_id = x.dept_id,
@@ -160,7 +163,7 @@ namespace Swachify.Application.Services
       service_id = x.service_id,
       service_name = x.service_name,
       service_type_id = x.service_type_id,
-service_type=x.service_type
+      service_type = x.service_type
     })
       .DistinctBy(s => new { s.dept_id, s.service_id })
       .ToList()
@@ -203,12 +206,12 @@ service_type=x.service_type
       await _db.SaveChangesAsync();
 
       var resultBookings = await GetAllBookingByBookingIDAsync(id);
-   var departnames = string.Join(",", resultBookings
-    .Where(b => b?.services != null)
-    .SelectMany(b => b.services)
-    .Select(s => $"[{s.department_name} - {s.service_name} -{s.service_type}]")
-    .Where(name => !string.IsNullOrEmpty(name))
-    .ToList());
+      var departnames = string.Join(",", resultBookings
+       .Where(b => b?.services != null)
+       .SelectMany(b => b.services)
+       .Select(s => $"[{s.department_name} - {s.service_name} -{s.service_type}]")
+       .Where(name => !string.IsNullOrEmpty(name))
+       .ToList());
       var mailtemplate = await _db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.CustomerAssignedAgent);
       var agentemail = resultBookings.FirstOrDefault().employee_email;
       var agentname = resultBookings.FirstOrDefault().employee_name;

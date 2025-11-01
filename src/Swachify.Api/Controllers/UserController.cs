@@ -7,14 +7,22 @@ namespace Swachify.Api;
 
 [ApiController]
 [Route("api/[controller]")]
-public class UserController(IUserService userService,IBookingService bookingService) : ControllerBase
+public class UserController(IUserService userService, IBookingService bookingService) : ControllerBase
 {
     [HttpPost("register")]
     public async Task<IActionResult> UserRegister(UserCommandDto userCommandDto)
     {
-        var result = await userService.CreateUserAsync(userCommandDto);
-        if (result == null) return Forbid();
-        return Ok(result);
+        try
+        {
+            var result = await userService.CreateUserAsync(userCommandDto);
+            if (result == null)
+                return Forbid();
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpGet("getallusers")]
@@ -39,9 +47,17 @@ public class UserController(IUserService userService,IBookingService bookingServ
     [HttpPost("createemployee")]
     public async Task<IActionResult> CreateEmployee(EmpCommandDto empCommandDto)
     {
-        var result = await userService.CreateEmployeAsync(empCommandDto);
-        if (result == null) return Forbid();
-        return Ok(result);
+        try
+        {
+            var result = await userService.CreateEmployeAsync(empCommandDto);
+            if (result == null)
+                return Forbid();
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     [HttpPost("assignemployee")]
