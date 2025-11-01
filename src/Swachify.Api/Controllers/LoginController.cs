@@ -27,7 +27,7 @@ public class LoginController(IAuthService authService) : ControllerBase
             return Unauthorized("Invalid username or password");
         }
     }
-    [HttpPost("forgot-password")]
+    [HttpPost("forgotpassword")]
     public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordRequestDto request)
     {
         var result = await authService.ForgotPasswordAsync(
@@ -41,5 +41,19 @@ public class LoginController(IAuthService authService) : ControllerBase
 
         return BadRequest(new { message = result });
     }
+
+ [HttpPost("forgotpasswordlink")]
+    public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordLinkDto request)
+    {
+        var result = await authService.ForgotpasswordLink(
+            request.Email
+        );
+
+        if (result)
+            return Ok(result);
+
+        return BadRequest(new { message = result });
+    }
+
 
 }

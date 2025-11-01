@@ -11,3 +11,7 @@ public record ForgotPasswordRequestDto(
         string Password,
         string ConfirmPassword
     );
+
+public record ForgotPasswordLinkDto(
+    string Email
+);
