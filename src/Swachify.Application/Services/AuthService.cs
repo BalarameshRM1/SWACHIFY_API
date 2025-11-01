@@ -23,7 +23,7 @@ public class AuthService(MyDbContext db, IPasswordHasher hasher, IEmailService e
     public async Task<string> ForgotPasswordAsync(long? id, string newPassword, string confirmPassword, CancellationToken ct = default)
     {
 
-        if (id>0 || string.IsNullOrWhiteSpace(newPassword) || string.IsNullOrWhiteSpace(confirmPassword))
+        if (id>0 && string.IsNullOrWhiteSpace(newPassword) && string.IsNullOrWhiteSpace(confirmPassword))
             return "Email and passwords are required.";
 
         if (newPassword != confirmPassword)
