@@ -7,7 +7,7 @@ public record loginDtos
 );
 
 public record ForgotPasswordRequestDto(
-        string Email,
+        long? id,
         string Password,
         string ConfirmPassword
     );

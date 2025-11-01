@@ -19,16 +19,17 @@ public class AuthService(MyDbContext db, IPasswordHasher hasher, IEmailService e
         }
         return hasher.Verify(password, user_auth.password) ? user_reg : null;
     }
-    public async Task<string> ForgotPasswordAsync(string email, string newPassword, string confirmPassword, CancellationToken ct = default)
+   
+    public async Task<string> ForgotPasswordAsync(long? id, string newPassword, string confirmPassword, CancellationToken ct = default)
     {
 
-        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(newPassword) || string.IsNullOrWhiteSpace(confirmPassword))
+        if (id>0 || string.IsNullOrWhiteSpace(newPassword) || string.IsNullOrWhiteSpace(confirmPassword))
             return "Email and passwords are required.";
 
         if (newPassword != confirmPassword)
             return "Password and Confirm Password do not match.";
 
-        var userAuth = await db.user_auths.FirstOrDefaultAsync(u => u.email == email, ct);
+        var userAuth = await db.user_auths.FirstOrDefaultAsync(u => u.id == id, ct);
         if (userAuth == null)
             return "Email not found. Please check your email or register first.";
 
