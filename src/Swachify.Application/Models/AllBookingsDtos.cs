@@ -29,7 +29,6 @@ public class AllBookingsDtos
 
     public long? service_id { get; set; }
 
-
     public string? service_name { get; set; }
 
     public long? service_type_id { get; set; }
@@ -46,9 +45,11 @@ public class AllBookingsDtos
 
     public DateTime? created_date { get; set; }
 
+public DateOnly? preferred_date { get; set;}
     public int? hours { get; set; }
 
     public int? add_on_hours { get; set; }
+
 }
 
 

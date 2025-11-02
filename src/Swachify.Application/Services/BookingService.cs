@@ -154,6 +154,7 @@ namespace Swachify.Application.Services
     created_by = g.First().created_by,
     customer_name = g.First().customer_name,
     created_date = g.First().created_date,
+    preferred_date=g.First().preferred_date,
     hours = g.First().hours,
     add_on_hours = g.First().add_on_hours,
     services = g.Select(x => new BookingServiceDto

@@ -47,6 +47,8 @@ public class AllBookingsOutputDtos
     public string? customer_name { get; set; }
 
     public DateTime? created_date { get; set; }
+
+    public DateOnly? preferred_date { get; set;}
     public string? service_type { get; set; }
    public int? hours { get; set; }
 
