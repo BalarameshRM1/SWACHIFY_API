@@ -48,8 +48,12 @@ public class AllBookingsOutputDtos
 
     public DateTime? created_date { get; set; }
 
-    public List<BookingServiceDto> services { get; set; } = new();
+    public DateOnly? preferred_date { get; set;}
     public string? service_type { get; set; }
+   public int? hours { get; set; }
+
+    public int? add_on_hours { get; set; }
+    public List<BookingServiceDto> services { get; set; } = new();
 
 }
 
