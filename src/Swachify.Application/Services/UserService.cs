@@ -31,7 +31,7 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
             first_name = cmd.first_name,
             last_name = cmd.last_name,
             mobile = cmd.mobile,
-            role_id = 3,
+            role_id = cmd.role_id,
             location_id = cmd.location_id,
         };
 
@@ -204,7 +204,7 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
             first_name = cmd.first_name,
             last_name = cmd.last_name,
             mobile = cmd.mobile,
-            role_id = 3,
+            role_id = cmd.role_id,
             location_id = cmd.location_id,
             is_active = true,
         };

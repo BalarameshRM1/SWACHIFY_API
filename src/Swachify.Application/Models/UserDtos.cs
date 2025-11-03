@@ -9,9 +9,9 @@ public record UserCommandDto
     string email,
     string mobile,
     string password,
-    long role_id,
     long location_id,
-    List<long> dept_id
+    List<long> dept_id,
+    long role_id
 );
 
 public record EmpCommandDto
