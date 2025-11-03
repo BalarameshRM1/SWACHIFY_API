@@ -42,8 +42,8 @@ public class LoginController(IAuthService authService) : ControllerBase
         return BadRequest(new { message = result });
     }
 
- [HttpPost("forgotpasswordlink")]
-    public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordLinkDto request)
+    [HttpPost("forgotpasswordlink")]
+    public async Task<ActionResult> ForgotPasswordLink([FromBody] ForgotPasswordLinkDto request)
     {
         var result = await authService.ForgotpasswordLink(
             request.Email
