@@ -60,6 +60,22 @@ public class UserController(IUserService userService, IBookingService bookingSer
         }
     }
 
+    [HttpPut("updateuser/{id}")]
+    public async Task<IActionResult> UpdateUser(long id,EmpCommandDto empCommandDto)
+    {
+        try
+        {
+            var result = await userService.UpdateUserAsync(id,empCommandDto);
+            if (result == null)
+                return Forbid();
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpPost("assignemployee")]
     public async Task<IActionResult> AssignEmployee(AssignEmpDto commandDto)
     {
