@@ -15,15 +15,17 @@
         string? email,
         string? address,
         long? status_id,
-decimal? total,
-decimal? subtotal,
-decimal? customer_requested_amount,
-decimal? discount_amount,
-decimal? discount_percentage,
-decimal? discount_total,
-    int? hours,
-     int? add_on_hours,
-List<Service> Services
+        decimal? total,
+        decimal? subtotal,
+        decimal? customer_requested_amount,
+        decimal? discount_amount,
+        decimal? discount_percentage,
+        decimal? discount_total,
+        int? hours,
+        int? add_on_hours,
+        string? room_sqfts,
+        bool? with_basement,
+        List<Service> Services
     );
 
     public record Service

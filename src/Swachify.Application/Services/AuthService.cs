@@ -49,7 +49,7 @@ public class AuthService(MyDbContext db, IPasswordHasher hasher, IEmailService e
         var user = await db.user_registrations.FirstOrDefaultAsync(d => d.email.ToUpper() == user_email.ToUpper());
         if (user is null) return false;
         var resetlink = config["ResetPasswordLink"] + user?.id;
-        var mailtemplate = await db.booking_templates.
+        var mailtemplate = await db.email_templates.
         FirstOrDefaultAsync(b => b.title == AppConstants.ResetEmail);
         string emailBody = mailtemplate.description
             .Replace("{0}", user?.first_name + " " + user?.last_name)

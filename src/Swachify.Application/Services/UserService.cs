@@ -252,7 +252,7 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
 
             // Email template
             var resetlink = config["ResetPasswordLink"] + user.id;
-            var mailtemplate = await db.booking_templates.
+            var mailtemplate = await db.email_templates.
             FirstOrDefaultAsync(b => b.title == AppConstants.ResetEmail);
             string emailBody = mailtemplate.description
                 .Replace("{0}", user?.first_name + " " + user?.last_name)

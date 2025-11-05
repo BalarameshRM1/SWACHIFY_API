@@ -2,6 +2,7 @@
 using Swachify.Application.Interfaces;
 using Swachify.Application.DTOs;
 using Swachify.Infrastructure.Models;
+using Swachify.Application.Models;
 
 namespace Swachify.Api.Controllers
 {
@@ -17,16 +18,16 @@ namespace Swachify.Api.Controllers
         }
 
 
-        [HttpGet("getall")]
-        public async Task<ActionResult> GetAll(CancellationToken ct)
+        [HttpPost("getall")]
+        public async Task<ActionResult> GetAll(GetAllServicesinputDtos input)
         {
-            return Ok(await _bookingService.GetAllBookingsAsync(ct));
+            return Ok(await _bookingService.GetAllBookingsAsync(input.limit,input.offset));
         }
 
-        [HttpGet("getallbookingsbyuserID")]
-        public async Task<ActionResult> getallbookingsbyuserID(long user_id,long emp_id)
+        [HttpPost("getallbookingsbyuserID")]
+        public async Task<ActionResult> getallbookingsbyuserID(GetAllBookingByUserIDDtos input)
         {
-            return Ok(await _bookingService.GetAllBookingByUserIDAsync(user_id,emp_id));
+            return Ok(await _bookingService.GetAllBookingByUserIDAsync(input.user_id,input.emp_id,input.offset,input.offset));
         }
 
 

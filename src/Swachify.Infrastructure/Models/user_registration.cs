@@ -45,6 +45,10 @@ public partial class user_registration
 
     public virtual master_department? dept { get; set; }
 
+    public virtual ICollection<email_template> email_templatecreated_byNavigations { get; set; } = new List<email_template>();
+
+    public virtual ICollection<email_template> email_templatemodified_byNavigations { get; set; } = new List<email_template>();
+
     public virtual master_gender? gender { get; set; }
 
     public virtual master_location? location { get; set; }
