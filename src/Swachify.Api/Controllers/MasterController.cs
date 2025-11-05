@@ -19,5 +19,11 @@ public class MasterController(IMasterService masterService) : ControllerBase
         var result = await masterService.CreateMasterService(cmd);
         return Ok(result);
     }
+
+    [HttpGet("getdashboardData")]
+    public async Task<IActionResult> GetDashBoardData(long id)
+    {
+        return Ok(await masterService.GetDashboardData(id));
+    }
     
 }

@@ -1,9 +1,12 @@
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using Org.BouncyCastle.Asn1;
 using Swachify.Application;
+using Swachify.Application.DTOs;
+using Swachify.Application.Interfaces;
 using Swachify.Infrastructure.Data;
 
-public class MasterService(MyDbContext db) : IMasterService
+public class MasterService(MyDbContext db, IBookingService bookingService) : IMasterService
 {
     public async Task<AllMasterDataDtos> GetAllMasterDatasAsync()
     {
@@ -50,6 +53,43 @@ public class MasterService(MyDbContext db) : IMasterService
             return false;
         return true;
     }
+
+    public async Task<DashboardDtos> GetDashboardData(long id=0,CancellationToken cancellationToken = default)
+    {
+        var result = new DashboardDtos();
+        result.servicesount = await db.master_departments.CountAsync();
+        result.availableEmployeeCount = await db.user_registrations.CountAsync(u => u.is_active == true);
+
+        if (id > 0)
+        {
+            result.pendingActivebookingcount = await db.service_bookings.CountAsync(d => d.assign_to == id && d.status_id == 2 && d.is_active == true);
+        }
+        else
+        {
+            result.pendingActivebookingcount = await db.service_bookings.CountAsync(d => d.status_id == 2 && d.is_active == true);
+        }
+
+        if (id > 0)
+        {
+            result.inprogressopenticketscount = await db.service_bookings.CountAsync(d => d.assign_to == id && d.status_id == 3 && d.is_active == true);
+        }
+        else
+        {
+            result.inprogressopenticketscount = await db.service_bookings.CountAsync(d => d.status_id == 3 && d.is_active == true);
+        }
+        if (id > 0)
+        {
+            result.Allbookings = await bookingService.GetAllBookingByUserIDAsync(0, id, 300, 0);
+        }
+        else
+        {
+            result.Allbookings = await bookingService.GetAllBookingsAsync(300, 0);
+        }
+
+        return result;
+    }
+
+    
 }
 
 
