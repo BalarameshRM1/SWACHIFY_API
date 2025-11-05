@@ -10,10 +10,10 @@ namespace Swachify.Application.Services
 {
   public class BookingService(MyDbContext _db, IEmailService _emailService) : IBookingService
   {
-    public async Task<List<AllBookingsOutputDtos>> GetAllBookingsAsync(CancellationToken ct = default)
+    public async Task<List<AllBookingsOutputDtos>> GetAllBookingsAsync(int limit = 10, int offset = 0)
     {
-
-      var rawData = await _db.Database.SqlQueryRaw<AllBookingsDtos>(DbConstants.fn_service_booking_list).ToListAsync();
+      var query = string.Format(DbConstants.fn_service_booking_list, limit, offset);
+      var rawData = await _db.Database.SqlQueryRaw<AllBookingsDtos>(query).ToListAsync();
       return await MappingBookingData(rawData);
     }
 
@@ -24,17 +24,17 @@ namespace Swachify.Application.Services
       return await MappingBookingData(rawData);
     }
 
-    public async Task<List<AllBookingsOutputDtos>> GetAllBookingByUserIDAsync(long userid, long empid)
+    public async Task<List<AllBookingsOutputDtos>> GetAllBookingByUserIDAsync(long userid, long empid, int limit = 10, int offset = 0)
     {
       string query = string.Empty;
       if (userid > 0)
       {
-        query = string.Format(DbConstants.fn_service_booking_list_by_Userid, userid);
+        query = string.Format(DbConstants.fn_service_booking_list_by_Userid, userid, limit, offset);
 
       }
       else if (empid > 0)
       {
-        query = string.Format(DbConstants.fn_service_booking_list_by_Empid, empid);
+        query = string.Format(DbConstants.fn_service_booking_list_by_Empid, empid, limit, offset);
 
       }
       var rawData = await _db.Database.SqlQueryRaw<AllBookingsDtos>(query).ToListAsync();
@@ -61,7 +61,7 @@ namespace Swachify.Application.Services
       booking.discount_total = booking.discount_total;
       booking.hours = booking.hours;
       booking.add_on_hours = booking.add_on_hours;
-      
+
       _db.service_bookings.Add(booking);
 
       await _db.SaveChangesAsync(ct);
@@ -74,6 +74,8 @@ namespace Swachify.Application.Services
       dept_id = item.dept_id,
       service_id = item.service_id,
       service_type_id = item.service_type_id,
+      room_sqfts = item.room_sqfts,
+      with_basement = item.with_basement,
     })
     .ToList();
       _db.service_trackings.AddRange(newTrackings);
@@ -83,7 +85,7 @@ namespace Swachify.Application.Services
       {
         var serviceName = await _db.master_departments.FirstOrDefaultAsync(d => d.id == booking.id);
         var subject = $"Thank You for Choosing Swachify Cleaning Service!";
-        var mailtemplate = await _db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.ServiceBookingMail);
+        var mailtemplate = await _db.email_templates.FirstOrDefaultAsync(b => b.title == AppConstants.ServiceBookingMail);
         string emailBody = mailtemplate.description
         .Replace("{0}", booking.full_name)
         .Replace("{1}", serviceName?.department_name + " Service");
@@ -154,7 +156,7 @@ namespace Swachify.Application.Services
     created_by = g.First().created_by,
     customer_name = g.First().customer_name,
     created_date = g.First().created_date,
-    preferred_date=g.First().preferred_date,
+    preferred_date = g.First().preferred_date,
     hours = g.First().hours,
     add_on_hours = g.First().add_on_hours,
     services = g.Select(x => new BookingServiceDto
@@ -187,7 +189,7 @@ namespace Swachify.Application.Services
       existing.status_id = 4;
       await _db.SaveChangesAsync();
       var subject = $"Your Cleaning Service Is Completed!";
-      var mailtemplate = await _db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.CustomerAssignMail);
+      var mailtemplate = await _db.email_templates.FirstOrDefaultAsync(b => b.title == AppConstants.CustomerAssignMail);
       string emailBody = mailtemplate.description
       .Replace("{0}", existing?.full_name);
 
@@ -213,7 +215,7 @@ namespace Swachify.Application.Services
        .Select(s => $"[{s.department_name} - {s.service_name} -{s.service_type}]")
        .Where(name => !string.IsNullOrEmpty(name))
        .ToList());
-      var mailtemplate = await _db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.CustomerAssignedAgent);
+      var mailtemplate = await _db.email_templates.FirstOrDefaultAsync(b => b.title == AppConstants.CustomerAssignedAgent);
       var agentemail = resultBookings.FirstOrDefault().employee_email;
       var agentname = resultBookings.FirstOrDefault().employee_name;
 
@@ -227,7 +229,7 @@ namespace Swachify.Application.Services
       {
         await _emailService.SendEmailAsync(existing.email, AppConstants.CustomerAssignedAgent, emailBody);
       }
-      var agentmailtemplate = await _db.booking_templates.FirstOrDefaultAsync(b => b.title == AppConstants.EMPAssignmentMail);
+      var agentmailtemplate = await _db.email_templates.FirstOrDefaultAsync(b => b.title == AppConstants.EMPAssignmentMail);
       string agentEmailBody = agentmailtemplate?.description.ToString()
        .Replace("{0}", existing?.id.ToString() + departnames)
        .Replace("{1}", agentname)

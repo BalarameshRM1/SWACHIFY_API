@@ -29,6 +29,10 @@ public partial class service_tracking
 
     public string? booking_id { get; set; }
 
+    public string? room_sqfts { get; set; }
+
+    public bool? with_basement { get; set; }
+
     public virtual master_department? dept { get; set; }
 
     public virtual master_service? service { get; set; }

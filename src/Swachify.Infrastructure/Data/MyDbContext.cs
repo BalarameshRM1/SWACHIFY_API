@@ -16,9 +16,9 @@ public partial class MyDbContext : DbContext
     {
     }
 
-    public virtual DbSet<booking_template> booking_templates { get; set; }
-
     public virtual DbSet<customer_complaint> customer_complaints { get; set; }
+
+    public virtual DbSet<email_template> email_templates { get; set; }
 
     public virtual DbSet<master_department> master_departments { get; set; }
 
@@ -56,25 +56,17 @@ public partial class MyDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<booking_template>(entity =>
-        {
-            entity.HasKey(e => e.id).HasName("pk_booking_template_id");
-
-            entity.ToTable("booking_template");
-
-            entity.HasIndex(e => e.title, "uk_booking_template_title").IsUnique();
-
-            entity.Property(e => e.created_date)
-                .HasDefaultValueSql("now()")
-                .HasColumnType("timestamp without time zone");
-            entity.Property(e => e.is_active).HasDefaultValue(true);
-            entity.Property(e => e.modified_date).HasColumnType("timestamp without time zone");
-            entity.Property(e => e.title).HasMaxLength(255);
-        });
-
         modelBuilder.Entity<customer_complaint>(entity =>
         {
             entity.HasKey(e => e.id).HasName("pk_customer_complaints_id");
+
+            entity.HasIndex(e => e.created_by, "idx_customer_complaints_created_by");
+
+            entity.HasIndex(e => e.location_id, "idx_customer_complaints_location_id");
+
+            entity.HasIndex(e => e.modified_by, "idx_customer_complaints_modified_by");
+
+            entity.HasIndex(e => e.user_id, "idx_customer_complaints_user_id");
 
             entity.Property(e => e.address).HasColumnType("character varying");
             entity.Property(e => e.created_date)
@@ -99,6 +91,35 @@ public partial class MyDbContext : DbContext
                 .HasForeignKey(d => d.user_id)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_customer_complaints_user_id");
+        });
+
+        modelBuilder.Entity<email_template>(entity =>
+        {
+            entity.HasKey(e => e.id).HasName("pk_booking_template_id");
+
+            entity.ToTable("email_template");
+
+            entity.HasIndex(e => e.created_by, "idx_email_template_created_by");
+
+            entity.HasIndex(e => e.modified_by, "idx_email_template_modified_by");
+
+            entity.HasIndex(e => e.title, "uk_email_template_title").IsUnique();
+
+            entity.Property(e => e.id).HasDefaultValueSql("nextval('booking_template_id_seq'::regclass)");
+            entity.Property(e => e.created_date)
+                .HasDefaultValueSql("now()")
+                .HasColumnType("timestamp without time zone");
+            entity.Property(e => e.is_active).HasDefaultValue(true);
+            entity.Property(e => e.modified_date).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.title).HasMaxLength(255);
+
+            entity.HasOne(d => d.created_byNavigation).WithMany(p => p.email_templatecreated_byNavigations)
+                .HasForeignKey(d => d.created_by)
+                .HasConstraintName("fk_email_template_created_by");
+
+            entity.HasOne(d => d.modified_byNavigation).WithMany(p => p.email_templatemodified_byNavigations)
+                .HasForeignKey(d => d.modified_by)
+                .HasConstraintName("fk_email_template_modified_by");
         });
 
         modelBuilder.Entity<master_department>(entity =>
@@ -155,6 +176,8 @@ public partial class MyDbContext : DbContext
 
             entity.ToTable("master_service");
 
+            entity.HasIndex(e => e.dept_id, "idx_master_service_dept_id");
+
             entity.HasIndex(e => new { e.service_name, e.dept_id }, "uk_master_service_service_name").IsUnique();
 
             entity.Property(e => e.is_active).HasDefaultValue(true);
@@ -170,6 +193,10 @@ public partial class MyDbContext : DbContext
             entity.HasKey(e => e.id).HasName("pk_master_service_mapping_id");
 
             entity.ToTable("master_service_mapping");
+
+            entity.HasIndex(e => e.service_id, "idx_master_service_mapping_service_id");
+
+            entity.HasIndex(e => e.service_type_id, "idx_master_service_mapping_service_type_id");
 
             entity.HasIndex(e => new { e.service_type_id, e.service_id }, "uk_master_service_mapping_service_id_service_type_id").IsUnique();
 
@@ -225,6 +252,12 @@ public partial class MyDbContext : DbContext
 
             entity.ToTable("otp_history");
 
+            entity.HasIndex(e => e.created_by, "idx_otp_history_created_by");
+
+            entity.HasIndex(e => e.modified_by, "idx_otp_history_modified_by");
+
+            entity.HasIndex(e => e.user_id, "idx_otp_history_user_id");
+
             entity.Property(e => e.created_date)
                 .HasDefaultValueSql("now()")
                 .HasColumnType("timestamp without time zone");
@@ -250,6 +283,16 @@ public partial class MyDbContext : DbContext
             entity.HasKey(e => e.id).HasName("pk_service_booking_id");
 
             entity.ToTable("service_booking");
+
+            entity.HasIndex(e => e.created_by, "idx_service_booking_created_by");
+
+            entity.HasIndex(e => e.modified_by, "idx_service_booking_modified_by");
+
+            entity.HasIndex(e => e.service_type_id, "idx_service_booking_service_type_id");
+
+            entity.HasIndex(e => e.slot_id, "idx_service_booking_slot_id");
+
+            entity.HasIndex(e => e.status_id, "idx_service_booking_status_id");
 
             entity.Property(e => e.address).HasMaxLength(500);
             entity.Property(e => e.booking_id).HasMaxLength(100);
@@ -296,12 +339,23 @@ public partial class MyDbContext : DbContext
 
             entity.ToTable("service_tracking");
 
+            entity.HasIndex(e => e.dept_id, "idx_service_tracking_dept_id");
+
+            entity.HasIndex(e => e.service_booking_id, "idx_service_tracking_service_booking_id");
+
+            entity.HasIndex(e => e.service_id, "idx_service_tracking_service_id");
+
+            entity.HasIndex(e => e.service_type_id, "idx_service_tracking_service_type_id");
+
+            entity.HasIndex(e => e.status_id, "idx_service_tracking_status_id");
+
             entity.Property(e => e.booking_id).HasMaxLength(100);
             entity.Property(e => e.created_date)
                 .HasDefaultValueSql("now()")
                 .HasColumnType("timestamp without time zone");
             entity.Property(e => e.is_active).HasDefaultValue(true);
             entity.Property(e => e.modified_date).HasColumnType("timestamp without time zone");
+            entity.Property(e => e.room_sqfts).HasMaxLength(100);
 
             entity.HasOne(d => d.dept).WithMany(p => p.service_trackings)
                 .HasForeignKey(d => d.dept_id)
@@ -331,6 +385,12 @@ public partial class MyDbContext : DbContext
 
             entity.ToTable("user_auth");
 
+            entity.HasIndex(e => e.created_by, "idx_user_auth_created_by");
+
+            entity.HasIndex(e => e.modified_by, "idx_user_auth_modified_by");
+
+            entity.HasIndex(e => e.user_id, "idx_user_auth_user_id");
+
             entity.Property(e => e.created_date)
                 .HasDefaultValueSql("now()")
                 .HasColumnType("timestamp without time zone");
@@ -358,6 +418,14 @@ public partial class MyDbContext : DbContext
             entity.HasKey(e => e.id).HasName("pk_user_department_id");
 
             entity.ToTable("user_department");
+
+            entity.HasIndex(e => e.created_by, "idx_user_department_created_by");
+
+            entity.HasIndex(e => e.dept_id, "idx_user_department_dept_id");
+
+            entity.HasIndex(e => e.modified_by, "idx_user_department_modified_by");
+
+            entity.HasIndex(e => e.user_id, "idx_user_department_user_id");
 
             entity.HasIndex(e => new { e.dept_id, e.user_id }, "uk_user_department_dept_id_user_id").IsUnique();
 
@@ -391,6 +459,16 @@ public partial class MyDbContext : DbContext
             entity.HasKey(e => e.id).HasName("pk_user_registration_id");
 
             entity.ToTable("user_registration");
+
+            entity.HasIndex(e => e.dept_id, "idx_user_registration_dept_id");
+
+            entity.HasIndex(e => e.gender_id, "idx_user_registration_gender_id");
+
+            entity.HasIndex(e => e.location_id, "idx_user_registration_location_id");
+
+            entity.HasIndex(e => e.role_id, "idx_user_registration_role_id");
+
+            entity.HasIndex(e => e.service_id, "idx_user_registration_service_id");
 
             entity.HasIndex(e => e.email, "uk_user_registration_email").IsUnique();
 

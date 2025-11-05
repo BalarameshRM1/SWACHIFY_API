@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Swachify.Infrastructure.Models;
 
 namespace Swachify.Application.DTOs;
@@ -48,13 +49,14 @@ public class AllBookingsOutputDtos
 
     public DateTime? created_date { get; set; }
 
-    public DateOnly? preferred_date { get; set;}
+    public DateOnly? preferred_date { get; set; }
     public string? service_type { get; set; }
-   public int? hours { get; set; }
+    public int? hours { get; set; }
 
     public int? add_on_hours { get; set; }
     public List<BookingServiceDto> services { get; set; } = new();
-
+    [JsonIgnore]
+    public HashSet<(int, int)> _serviceKeys;
 }
 
 public class BookingServiceDto
