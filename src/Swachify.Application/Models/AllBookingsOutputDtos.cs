@@ -55,8 +55,8 @@ public class AllBookingsOutputDtos
 
     public int? add_on_hours { get; set; }
     public List<BookingServiceDto> services { get; set; } = new();
-    [JsonIgnore]
-    public HashSet<(int, int)> _serviceKeys;
+    // [JsonIgnore]
+    // public HashSet<(int, int)> _serviceKeys;
 }
 
 public class BookingServiceDto

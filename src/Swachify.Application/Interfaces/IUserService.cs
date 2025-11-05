@@ -13,8 +13,6 @@ public interface IUserService
     Task<AllUserDtos> GetUserByID(long id);
 
     Task<long> CreateEmployeAsync(EmpCommandDto cmd, CancellationToken ct = default);
-
-
-
+    Task<bool> UpdateUserAsync(long id, EmpCommandDto cmd);
     Task<bool> DeleteUserAsync(long id);
 }

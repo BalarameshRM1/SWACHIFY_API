@@ -127,9 +127,77 @@ namespace Swachify.Application.Services
       return true;
     }
 
+private async Task<List<AllBookingsOutputDtos>> MappingBookingData(List<AllBookingsDtos> rawData)
+{
+    if (rawData == null || rawData.Count == 0)
+        return new List<AllBookingsOutputDtos>();
 
-    private async Task<List<AllBookingsOutputDtos>> MappingBookingData(List<AllBookingsDtos> rawData)
+    var groups = rawData.GroupBy(x => x.id);
+
+    var result = new List<AllBookingsOutputDtos>(groups.Count());
+
+    foreach (var g in groups)
     {
+        var first = g.First();
+
+        var services = new List<BookingServiceDto>();
+        var seen = new HashSet<(long? deptId, long? serviceId)>();
+
+        foreach (var x in g)
+        {
+            var key = (x.dept_id, x.service_id);
+            if (seen.Add(key))
+            {
+                services.Add(new BookingServiceDto
+                {
+                    dept_id = x.dept_id,
+                    department_name = x.department_name,
+                    service_id = x.service_id,
+                    service_name = x.service_name,
+                    service_type_id = x.service_type_id,
+                    service_type = x.service_type
+                });
+            }
+        }
+
+        result.Add(new AllBookingsOutputDtos
+        {
+            id = g.Key,
+            booking_id = first.booking_id,
+            slot_id = first.slot_id,
+            slot_time = first.slot_time,
+            full_name = first.full_name,
+            phone = first.phone,
+            email = first.email,
+            address = first.address,
+            status_id = first.status_id,
+            assign_to = first.assign_to,
+            employee_name = first.employee_name,
+            employee_email = first.employee_email,
+            status = first.status,
+            total = first.total,
+            subtotal = first.subtotal,
+            customer_requested_amount = first.customer_requested_amount,
+            discount_amount = first.discount_amount,
+            discount_percentage = first.discount_percentage,
+            discount_total = first.discount_total,
+            created_by = first.created_by,
+            customer_name = first.customer_name,
+            created_date = first.created_date,
+            preferred_date = first.preferred_date,
+            hours = first.hours,
+            add_on_hours = first.add_on_hours,
+            services = services
+        });
+    }
+
+    return result;
+}
+
+    private async Task<List<AllBookingsOutputDtos>> MappingBookingDataold(List<AllBookingsDtos> rawData)
+    {
+      var pedningCount = await _db.service_bookings.CountAsync(d=>d.status_id==2);
+      var inprogressCount = await _db.service_bookings.CountAsync(d=>d.status_id==3);
       return rawData
   .GroupBy(x => x.id)
   .Select(g => new AllBookingsOutputDtos
