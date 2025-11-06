@@ -127,17 +127,17 @@ namespace Swachify.Application.Services
       return true;
     }
 
-private async Task<List<AllBookingsOutputDtos>> MappingBookingData(List<AllBookingsDtos> rawData)
-{
-    if (rawData == null || rawData.Count == 0)
+    private async Task<List<AllBookingsOutputDtos>> MappingBookingData(List<AllBookingsDtos> rawData)
+    {
+      if (rawData == null || rawData.Count == 0)
         return new List<AllBookingsOutputDtos>();
 
-    var groups = rawData.GroupBy(x => x.id);
+      var groups = rawData.GroupBy(x => x.id);
 
-    var result = new List<AllBookingsOutputDtos>(groups.Count());
+      var result = new List<AllBookingsOutputDtos>(groups.Count());
 
-    foreach (var g in groups)
-    {
+      foreach (var g in groups)
+      {
         var first = g.First();
 
         var services = new List<BookingServiceDto>();
@@ -145,102 +145,58 @@ private async Task<List<AllBookingsOutputDtos>> MappingBookingData(List<AllBooki
 
         foreach (var x in g)
         {
-            var key = (x.dept_id, x.service_id);
-            if (seen.Add(key))
+          var key = (x.dept_id, x.service_id);
+          if (seen.Add(key))
+          {
+            services.Add(new BookingServiceDto
             {
-                services.Add(new BookingServiceDto
-                {
-                    dept_id = x.dept_id,
-                    department_name = x.department_name,
-                    service_id = x.service_id,
-                    service_name = x.service_name,
-                    service_type_id = x.service_type_id,
-                    service_type = x.service_type
-                });
-            }
+              dept_id = x.dept_id,
+              department_name = x.department_name,
+              service_id = x.service_id,
+              service_name = x.service_name,
+              service_type_id = x.service_type_id,
+              service_type = x.service_type
+            });
+          }
         }
 
         result.Add(new AllBookingsOutputDtos
         {
-            id = g.Key,
-            booking_id = first.booking_id,
-            slot_id = first.slot_id,
-            slot_time = first.slot_time,
-            full_name = first.full_name,
-            phone = first.phone,
-            email = first.email,
-            address = first.address,
-            status_id = first.status_id,
-            assign_to = first.assign_to,
-            employee_name = first.employee_name,
-            employee_email = first.employee_email,
-            status = first.status,
-            total = first.total,
-            subtotal = first.subtotal,
-            customer_requested_amount = first.customer_requested_amount,
-            discount_amount = first.discount_amount,
-            discount_percentage = first.discount_percentage,
-            discount_total = first.discount_total,
-            created_by = first.created_by,
-            customer_name = first.customer_name,
-            created_date = first.created_date,
-            preferred_date = first.preferred_date,
-            hours = first.hours,
-            add_on_hours = first.add_on_hours,
-            services = services
+          id = g.Key,
+          booking_id = first.booking_id,
+          slot_id = first.slot_id,
+          slot_time = first.slot_time,
+          full_name = first.full_name,
+          phone = first.phone,
+          email = first.email,
+          address = first.address,
+          status_id = first.status_id,
+          assign_to = first.assign_to,
+          employee_name = first.employee_name,
+          employee_email = first.employee_email,
+          status = first.status,
+          total = first.total,
+          subtotal = first.subtotal,
+          customer_requested_amount = first.customer_requested_amount,
+          discount_amount = first.discount_amount,
+          discount_percentage = first.discount_percentage,
+          discount_total = first.discount_total,
+          created_by = first.created_by,
+          customer_name = first.customer_name,
+          created_date = first.created_date,
+          preferred_date = first.preferred_date,
+          hours = first.hours,
+          add_on_hours = first.add_on_hours,
+          services = services
         });
+      }
+
+      return result;
     }
 
-    return result;
-}
+    
 
-    private async Task<List<AllBookingsOutputDtos>> MappingBookingDataold(List<AllBookingsDtos> rawData)
-    {
-      var pedningCount = await _db.service_bookings.CountAsync(d=>d.status_id==2);
-      var inprogressCount = await _db.service_bookings.CountAsync(d=>d.status_id==3);
-      return rawData
-  .GroupBy(x => x.id)
-  .Select(g => new AllBookingsOutputDtos
-  {
-    id = g.Key,
-    booking_id = g.First().booking_id,
-    slot_id = g.First().slot_id,
-    slot_time = g.First().slot_time,
-    full_name = g.First().full_name,
-    phone = g.First().phone,
-    email = g.First().email,
-    address = g.First().address,
-    status_id = g.First().status_id,
-    assign_to = g.First().assign_to,
-    employee_name = g.First().employee_name,
-    employee_email = g.First().employee_email,
-    status = g.First().status,
-    total = g.First().total,
-    subtotal = g.First().subtotal,
-    customer_requested_amount = g.First().customer_requested_amount,
-    discount_amount = g.First().discount_amount,
-    discount_percentage = g.First().discount_percentage,
-    discount_total = g.First().discount_total,
-    created_by = g.First().created_by,
-    customer_name = g.First().customer_name,
-    created_date = g.First().created_date,
-    preferred_date = g.First().preferred_date,
-    hours = g.First().hours,
-    add_on_hours = g.First().add_on_hours,
-    services = g.Select(x => new BookingServiceDto
-    {
-      dept_id = x.dept_id,
-      department_name = x.department_name,
-      service_id = x.service_id,
-      service_name = x.service_name,
-      service_type_id = x.service_type_id,
-      service_type = x.service_type
-    })
-      .DistinctBy(s => new { s.dept_id, s.service_id })
-      .ToList()
-  })
-  .ToList();
-    }
+
     public async Task<bool> UpdateTicketByEmployeeInprogress(long id)
     {
       var existing = await _db.service_bookings.FirstOrDefaultAsync(b => b.id == id);
