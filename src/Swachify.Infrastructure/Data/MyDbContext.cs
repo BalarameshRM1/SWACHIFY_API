@@ -95,7 +95,7 @@ public partial class MyDbContext : DbContext
 
         modelBuilder.Entity<email_template>(entity =>
         {
-            entity.HasKey(e => e.id).HasName("pk_booking_template_id");
+            entity.HasKey(e => e.id).HasName("pk_email_template_id");
 
             entity.ToTable("email_template");
 
@@ -356,6 +356,7 @@ public partial class MyDbContext : DbContext
             entity.Property(e => e.is_active).HasDefaultValue(true);
             entity.Property(e => e.modified_date).HasColumnType("timestamp without time zone");
             entity.Property(e => e.room_sqfts).HasMaxLength(100);
+            entity.Property(e => e.with_basement_price).HasPrecision(10, 2);
 
             entity.HasOne(d => d.dept).WithMany(p => p.service_trackings)
                 .HasForeignKey(d => d.dept_id)

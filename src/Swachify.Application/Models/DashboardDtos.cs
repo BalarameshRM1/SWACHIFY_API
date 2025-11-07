@@ -10,5 +10,5 @@ public class DashboardDtos
 
     public int? inprogressopenticketscount { get; set; }
     public int? availableEmployeeCount { get; set; }
-    public List<AllBookingsOutputDtos> Allbookings { get; set; }
+    public List<AllBookingsDtos> Allbookings { get; set; }
 }
