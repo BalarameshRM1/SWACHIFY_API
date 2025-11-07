@@ -1,45 +1,74 @@
-﻿
-
+﻿using System.Text.Json;
+using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Swachify.Application.DTOs;
 using Swachify.Application.Interfaces;
 using Swachify.Infrastructure.Data;
 using Swachify.Infrastructure.Models;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Swachify.Application.Services
 {
   public class BookingService(MyDbContext _db, IEmailService _emailService) : IBookingService
   {
-    public async Task<List<AllBookingsOutputDtos>> GetAllBookingsAsync(int limit = 10, int offset = 0)
+    public async Task<List<AllBookingsDtos>> GetAllBookingsAsync(int limit = 10, int offset = 0)
     {
-      var query = string.Format(DbConstants.fn_service_booking_list, limit, offset);
-      var rawData = await _db.Database.SqlQueryRaw<AllBookingsDtos>(query).ToListAsync();
-      return await MappingBookingData(rawData);
+      var query = string.Format(DbConstants.fn_service_booking_list, -1, -1, -1, limit, offset);
+      using var conn = _db.Database.GetDbConnection();
+      if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync();
+      var rawData = await conn.QueryAsync<AllBookingsDtos>(query);
+      var jsonOptions = new JsonSerializerOptions
+      {
+        PropertyNameCaseInsensitive = true
+      };
+      foreach (var rawD in rawData.ToList())
+      {
+        rawD.serviceslist = JsonSerializer.Deserialize<List<BookingServiceDto>>(rawD.services, jsonOptions)
+?? new List<BookingServiceDto>();
+        rawD.services = "";
+      }
+      return rawData.ToList();
     }
 
-    public async Task<List<AllBookingsOutputDtos>> GetAllBookingByBookingIDAsync(long bookingId)
+    public async Task<List<AllBookingsDtos>> GetAllBookingByBookingIDAsync(long bookingId, int limit = 10, int offset = 0)
     {
-      string query = string.Format(DbConstants.fn_service_booking_get_list_by_booking_id, bookingId);
-      var rawData = await _db.Database.SqlQueryRaw<AllBookingsDtos>(query).ToListAsync();
-      return await MappingBookingData(rawData);
+      string query = string.Format(DbConstants.fn_service_booking_list, bookingId, -1, -1, limit, offset);
+
+      using var conn = _db.Database.GetDbConnection();
+      if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync();
+      var rawData = await conn.QueryAsync<AllBookingsDtos>(query);
+      var jsonOptions = new JsonSerializerOptions
+      {
+        PropertyNameCaseInsensitive = true
+      };
+      foreach (var rawD in rawData.ToList())
+      {
+        rawD.serviceslist = JsonSerializer.Deserialize<List<BookingServiceDto>>(rawD.services, jsonOptions)
+         ?? new List<BookingServiceDto>();
+        rawD.services = "";
+      }
+      return rawData.ToList();
     }
 
-    public async Task<List<AllBookingsOutputDtos>> GetAllBookingByUserIDAsync(long userid, long empid, int limit = 10, int offset = 0)
+    public async Task<List<AllBookingsDtos>> GetAllBookingByUserIDAsync(long userid, long empid, int limit = 10, int offset = 0)
     {
-      string query = string.Empty;
-      if (userid > 0)
+      userid = userid > 0 ? userid : -1;
+      empid = empid > 0 ? empid : -1;
+      string query = string.Format(DbConstants.fn_service_booking_list, -1, userid, empid, limit, offset);
+      using var conn = _db.Database.GetDbConnection();
+      if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync();
+      var rawData = await conn.QueryAsync<AllBookingsDtos>(query);
+      var jsonOptions = new JsonSerializerOptions
       {
-        query = string.Format(DbConstants.fn_service_booking_list_by_Userid, userid, limit, offset);
-
-      }
-      else if (empid > 0)
+        PropertyNameCaseInsensitive = true
+      };
+      foreach (var rawD in rawData.ToList())
       {
-        query = string.Format(DbConstants.fn_service_booking_list_by_Empid, empid, limit, offset);
-
+        rawD.serviceslist = JsonSerializer.Deserialize<List<BookingServiceDto>>(rawD.services, jsonOptions)
+         ?? new List<BookingServiceDto>();
+        rawD.services = "";
       }
-      var rawData = await _db.Database.SqlQueryRaw<AllBookingsDtos>(query).ToListAsync();
-
-      return await MappingBookingData(rawData);
+      return rawData.ToList();
     }
 
     public async Task<long> CreateAsync(service_booking booking, CancellationToken ct = default)
@@ -127,76 +156,6 @@ namespace Swachify.Application.Services
       return true;
     }
 
-    private async Task<List<AllBookingsOutputDtos>> MappingBookingData(List<AllBookingsDtos> rawData)
-    {
-      if (rawData == null || rawData.Count == 0)
-        return new List<AllBookingsOutputDtos>();
-
-      var groups = rawData.GroupBy(x => x.id);
-
-      var result = new List<AllBookingsOutputDtos>(groups.Count());
-
-      foreach (var g in groups)
-      {
-        var first = g.First();
-
-        var services = new List<BookingServiceDto>();
-        var seen = new HashSet<(long? deptId, long? serviceId)>();
-
-        foreach (var x in g)
-        {
-          var key = (x.dept_id, x.service_id);
-          if (seen.Add(key))
-          {
-            services.Add(new BookingServiceDto
-            {
-              dept_id = x.dept_id,
-              department_name = x.department_name,
-              service_id = x.service_id,
-              service_name = x.service_name,
-              service_type_id = x.service_type_id,
-              service_type = x.service_type
-            });
-          }
-        }
-
-        result.Add(new AllBookingsOutputDtos
-        {
-          id = g.Key,
-          booking_id = first.booking_id,
-          slot_id = first.slot_id,
-          slot_time = first.slot_time,
-          full_name = first.full_name,
-          phone = first.phone,
-          email = first.email,
-          address = first.address,
-          status_id = first.status_id,
-          assign_to = first.assign_to,
-          employee_name = first.employee_name,
-          employee_email = first.employee_email,
-          status = first.status,
-          total = first.total,
-          subtotal = first.subtotal,
-          customer_requested_amount = first.customer_requested_amount,
-          discount_amount = first.discount_amount,
-          discount_percentage = first.discount_percentage,
-          discount_total = first.discount_total,
-          created_by = first.created_by,
-          customer_name = first.customer_name,
-          created_date = first.created_date,
-          preferred_date = first.preferred_date,
-          hours = first.hours,
-          add_on_hours = first.add_on_hours,
-          services = services
-        });
-      }
-
-      return result;
-    }
-
-    
-
-
     public async Task<bool> UpdateTicketByEmployeeInprogress(long id)
     {
       var existing = await _db.service_bookings.FirstOrDefaultAsync(b => b.id == id);
@@ -234,8 +193,8 @@ namespace Swachify.Application.Services
 
       var resultBookings = await GetAllBookingByBookingIDAsync(id);
       var departnames = string.Join(",", resultBookings
-       .Where(b => b?.services != null)
-       .SelectMany(b => b.services)
+       .Where(b => b?.serviceslist != null)
+       .SelectMany(b => b.serviceslist)
        .Select(s => $"[{s.department_name} - {s.service_name} -{s.service_type}]")
        .Where(name => !string.IsNullOrEmpty(name))
        .ToList());

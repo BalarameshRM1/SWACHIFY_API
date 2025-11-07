@@ -25,10 +25,10 @@ public class UserController(IUserService userService, IBookingService bookingSer
         }
     }
 
-    [HttpGet("getallusers")]
-    public async Task<IActionResult> GetAllUsers()
+    [HttpPost("getallusers")]
+    public async Task<IActionResult> GetAllUsers(AllusersDto cmd)
     {
-        return Ok(await userService.GetAllUsersAsync());
+        return Ok(await userService.GetAllUsersAsync(cmd));
     }
 
     [HttpGet("getuserbyid")]
@@ -36,14 +36,6 @@ public class UserController(IUserService userService, IBookingService bookingSer
     {
         return Ok(await userService.GetUserByID(id));
     }
-
-
-    [HttpGet("getallusersByDept")]
-    public async Task<IActionResult> GetAllUsersByDept(long deptId)
-    {
-        return Ok(await userService.GetAllUsersByDept(deptId));
-    }
-
     [HttpPost("createemployee")]
     public async Task<IActionResult> CreateEmployee(EmpCommandDto empCommandDto)
     {

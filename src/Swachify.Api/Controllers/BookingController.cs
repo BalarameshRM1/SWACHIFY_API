@@ -21,16 +21,20 @@ namespace Swachify.Api.Controllers
         [HttpPost("getall")]
         public async Task<ActionResult> GetAll(GetAllServicesinputDtos input)
         {
-            return Ok(await _bookingService.GetAllBookingsAsync(input.limit,input.offset));
+            return Ok(await _bookingService.GetAllBookingsAsync(input.limit, input.offset));
         }
 
         [HttpPost("getallbookingsbyuserID")]
         public async Task<ActionResult> getallbookingsbyuserID(GetAllBookingByUserIDDtos input)
         {
-            return Ok(await _bookingService.GetAllBookingByUserIDAsync(input.user_id,input.emp_id,input.offset,input.offset));
+            return Ok(await _bookingService.GetAllBookingByUserIDAsync(input.user_id, input.emp_id, input.offset, input.offset));
         }
 
-
+        [HttpPost("getallbookingsbyid")]
+        public async Task<ActionResult> getallbookingsbyID(GetAllBookingByUserIDDtos input)
+        {
+            return Ok(await _bookingService.GetAllBookingByBookingIDAsync(input.ticketid, input.offset, input.offset));
+        }
         [HttpPost]
         public async Task<ActionResult> Create([FromBody] BookingDto dto, CancellationToken ct)
         {
@@ -64,7 +68,7 @@ namespace Swachify.Api.Controllers
                 customer_requested_amount = dto?.customer_requested_amount,
                 discount_amount = dto?.discount_amount,
                 discount_percentage = dto?.discount_percentage,
-                discount_total=dto?.discount_total,
+                discount_total = dto?.discount_total,
                 service_trackings = service_Trackings
             };
 

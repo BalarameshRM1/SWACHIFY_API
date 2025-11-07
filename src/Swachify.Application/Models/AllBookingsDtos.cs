@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Swachify.Infrastructure.Models;
 
 namespace Swachify.Application.DTOs;
@@ -45,14 +46,23 @@ public class AllBookingsDtos
 
     public DateTime? created_date { get; set; }
 
-public DateOnly? preferred_date { get; set;}
+public DateTime? preferred_date { get; set;}
     public int? hours { get; set; }
 
     public int? add_on_hours { get; set; }
-
+    public string services { get; set; }
+    public List<BookingServiceDto> serviceslist { get; set; }
 }
 
-
+public class BookingServiceDto
+{
+    public long? dept_id { get; set; }
+    public string department_name { get; set; }
+    public long? service_id { get; set; }
+    public string service_name { get; set; }
+    public long? service_type_id { get; set; }
+    public string? service_type { get; set; }
+}
 
 
 

@@ -33,6 +33,8 @@ public partial class service_tracking
 
     public bool? with_basement { get; set; }
 
+    public decimal? with_basement_price { get; set; }
+
     public virtual master_department? dept { get; set; }
 
     public virtual master_service? service { get; set; }

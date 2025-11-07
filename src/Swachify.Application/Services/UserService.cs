@@ -89,73 +89,19 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
         }
     }
 
-    public async Task<List<AllUserDtos>> GetAllUsersAsync()
+    public async Task<List<AllUserDtos>> GetAllUsersAsync(AllusersDto cmd)
     {
-        var users = await db.user_registrations.ToListAsync();
-        var userIds = users.Select(u => u.id).ToList();
-
-        var userDeptPairs = await (
-            from ud in db.user_departments
-            where userIds.Contains(ud.user_id)
-            join md in db.master_departments on ud.dept_id equals md.id
-            select new { ud.user_id, md.department_name }
-        ).ToListAsync();
-
-        var grouped = userDeptPairs
-            .GroupBy(x => x.user_id)
-            .ToDictionary(g => g.Key, g => g.Select(x => x.department_name).ToList());
-
-        var assignedUsersid = await db.service_bookings.Where(d => (d.status_id == 1 || d.status_id == 2 || d.status_id == 3) && d.is_active == true).Select(s => s.assign_to).Distinct().ToArrayAsync();
-
-        var allUsers = users
-        .Select(u => new AllUserDtos
-        {
-            id = u.id,
-            age = u.age,
-            dept_id = u.dept_id,
-            email = u.email,
-            first_name = u.first_name,
-            last_name = u.last_name,
-            mobile = u.mobile,
-            role_id = u.role_id,
-            gender_id = u.gender_id,
-            is_active = u.is_active,
-            location_id = u.location_id,
-            is_assigned = assignedUsersid.Contains(u.id),
-            depts = grouped.TryGetValue(u.id, out var list) ? list : new List<string>()
-        }).Where(d => d.is_active == true).ToList();
-        return allUsers ?? new List<AllUserDtos>();
+       var userid = cmd.userid > 0 ? cmd.userid : -1;
+        var roleid = cmd.roleid > 0 ? cmd.roleid : -1;
+        var query = string.Format(DbConstants.fn_users_list, userid, roleid, cmd.limit, cmd.offset);
+        var rawData = await db.Database.SqlQueryRaw<AllUserDtos>(query).ToListAsync();
+        return rawData.ToList();
     }
-
-    public async Task<List<user_registration>> GetAllUsersByDept(long deptId)
-    {
-        return await db.user_registrations.Where(d => d.dept_id == deptId)?.ToListAsync();
-    }
-
     public async Task<AllUserDtos> GetUserByID(long id)
     {
-        var user = await db.user_registrations?.FirstOrDefaultAsync(d => d.id == id);
-        if (user == null) return new AllUserDtos();
-        var userDept = await (
-            from ud in db.user_departments
-            where ud.user_id == user.id
-            join md in db.master_departments on ud.dept_id equals md.id
-            select md.department_name).ToListAsync();
-
-        var userResult = new AllUserDtos
-        {
-            id = user.id,
-            age = user.age,
-            dept_id = user.dept_id,
-            email = user.email,
-            first_name = user.first_name,
-            gender_id = user.gender_id,
-            is_active = user.is_active,
-            depts = userDept,
-            location_id = user.location_id
-        };
-
-        return userResult;
+        var query = string.Format(DbConstants.fn_users_list, id, -1, 1, 0);
+        var rawData = await db.Database.SqlQueryRaw<AllUserDtos>(query).ToListAsync();
+        return rawData.FirstOrDefault();
     }
     private async Task SendWelcomeEmailAsync(string toEmail, string firstName, string password)
     {
