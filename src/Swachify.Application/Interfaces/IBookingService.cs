@@ -6,7 +6,7 @@ namespace Swachify.Application.Interfaces
 {
     public interface IBookingService
     {
-        Task<List<AllBookingsDtos>> GetAllBookingsAsync(int limit, int offset);
+        Task<List<AllBookingsDtos>> GetAllBookingsAsync(long status_id,int limit, int offset);
         Task<List<AllBookingsDtos>> GetAllBookingByBookingIDAsync(long bookingId, int limit, int offset);
         Task<List<AllBookingsDtos>> GetAllBookingByUserIDAsync(long userid, long empid,int limit, int offset);    
         Task<long> CreateAsync(service_booking booking, CancellationToken ct = default);

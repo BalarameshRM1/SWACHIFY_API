@@ -21,7 +21,7 @@ namespace Swachify.Api.Controllers
         [HttpPost("getall")]
         public async Task<ActionResult> GetAll(GetAllServicesinputDtos input)
         {
-            return Ok(await _bookingService.GetAllBookingsAsync(input.limit, input.offset));
+            return Ok(await _bookingService.GetAllBookingsAsync(input.status_id,input.limit, input.offset));
         }
 
         [HttpPost("getallbookingsbyuserID")]
