@@ -83,7 +83,7 @@ public class MasterService(MyDbContext db, IBookingService bookingService) : IMa
         }
         else
         {
-            result.Allbookings = await bookingService.GetAllBookingsAsync(300, 0);
+            result.Allbookings = await bookingService.GetAllBookingsAsync(-1,300, 0);
         }
 
         return result;

@@ -11,9 +11,9 @@ namespace Swachify.Application.Services
 {
   public class BookingService(MyDbContext _db, IEmailService _emailService) : IBookingService
   {
-    public async Task<List<AllBookingsDtos>> GetAllBookingsAsync(int limit = 10, int offset = 0)
+    public async Task<List<AllBookingsDtos>> GetAllBookingsAsync(long status_id=-1, int limit = 10, int offset = 0)
     {
-      var query = string.Format(DbConstants.fn_service_booking_list, -1, -1, -1, limit, offset);
+      var query = string.Format(DbConstants.fn_service_booking_list, -1, -1, -1,status_id, limit, offset);
       using var conn = _db.Database.GetDbConnection();
       if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync();
       var rawData = await conn.QueryAsync<AllBookingsDtos>(query);
@@ -32,7 +32,7 @@ namespace Swachify.Application.Services
 
     public async Task<List<AllBookingsDtos>> GetAllBookingByBookingIDAsync(long bookingId, int limit = 10, int offset = 0)
     {
-      string query = string.Format(DbConstants.fn_service_booking_list, bookingId, -1, -1, limit, offset);
+      string query = string.Format(DbConstants.fn_service_booking_list, bookingId, -1, -1,-1, limit, offset);
 
       using var conn = _db.Database.GetDbConnection();
       if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync();
@@ -54,7 +54,7 @@ namespace Swachify.Application.Services
     {
       userid = userid > 0 ? userid : -1;
       empid = empid > 0 ? empid : -1;
-      string query = string.Format(DbConstants.fn_service_booking_list, -1, userid, empid, limit, offset);
+      string query = string.Format(DbConstants.fn_service_booking_list, -1, userid, empid,-1, limit, offset);
       using var conn = _db.Database.GetDbConnection();
       if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync();
       var rawData = await conn.QueryAsync<AllBookingsDtos>(query);
