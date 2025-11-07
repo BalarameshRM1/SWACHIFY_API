@@ -186,6 +186,8 @@ namespace Swachify.Application.Services
     public async Task<bool> AssignEmployee(long id, long user_id)
     {
       var existing = await _db.service_bookings.FirstOrDefaultAsync(b => b.id == id);
+      var mailtemplate = await _db.email_templates.FirstOrDefaultAsync(b => b.title == AppConstants.CustomerAssignedAgent);
+      var agentmailtemplate = await _db.email_templates.FirstOrDefaultAsync(b => b.title == AppConstants.EMPAssignmentMail);
       if (existing == null) return false;
       existing.status_id = 2;
       existing.assign_to = user_id;
@@ -198,7 +200,6 @@ namespace Swachify.Application.Services
        .Select(s => $"[{s.department_name} - {s.service_name} -{s.service_type}]")
        .Where(name => !string.IsNullOrEmpty(name))
        .ToList());
-      var mailtemplate = await _db.email_templates.FirstOrDefaultAsync(b => b.title == AppConstants.CustomerAssignedAgent);
       var agentemail = resultBookings.FirstOrDefault().employee_email;
       var agentname = resultBookings.FirstOrDefault().employee_name;
 
@@ -212,7 +213,6 @@ namespace Swachify.Application.Services
       {
         await _emailService.SendEmailAsync(existing.email, AppConstants.CustomerAssignedAgent, emailBody);
       }
-      var agentmailtemplate = await _db.email_templates.FirstOrDefaultAsync(b => b.title == AppConstants.EMPAssignmentMail);
       string agentEmailBody = agentmailtemplate?.description.ToString()
        .Replace("{0}", existing?.id.ToString() + departnames)
        .Replace("{1}", agentname)
