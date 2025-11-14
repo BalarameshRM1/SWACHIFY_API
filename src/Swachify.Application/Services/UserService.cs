@@ -20,8 +20,23 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
         if (string.IsNullOrWhiteSpace(cmd.email))
             throw new ArgumentException("Email is required", nameof(cmd.email));
 
-        if (await db.user_registrations.AnyAsync(u => u.email == cmd.email, ct))
-            throw new InvalidOperationException("Email exists");
+
+        var emailExists = await db.user_registrations
+     .AnyAsync(u => u.email == cmd.email, ct);
+
+        var phoneExists = await db.user_registrations
+            .AnyAsync(u => u.mobile == cmd.mobile, ct);
+
+        if (emailExists && phoneExists)
+            throw new InvalidOperationException("Email and Phone number already exist");
+
+        if (emailExists)
+            throw new InvalidOperationException("Email already exists");
+
+        if (phoneExists)
+            throw new InvalidOperationException("Phone number already exists");
+
+
         long userid = await db.user_registrations.MaxAsync(u => (long?)u.id) ?? 0L;
         userid = userid + 1;
         var user = new user_registration
@@ -139,8 +154,22 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
         if (string.IsNullOrWhiteSpace(cmd.email))
             throw new ArgumentException("Email is required", nameof(cmd.email));
 
-        if (await db.user_registrations.AnyAsync(u => u.email == cmd.email, ct))
-            throw new InvalidOperationException("Email exists");
+        var emailExists = await db.user_registrations
+    .AnyAsync(u => u.email == cmd.email, ct);
+
+        var phoneExists = await db.user_registrations
+            .AnyAsync(u => u.mobile == cmd.mobile, ct);
+
+        if (emailExists && phoneExists)
+            throw new InvalidOperationException("Email and Phone number already exist");
+
+        if (emailExists)
+            throw new InvalidOperationException("Email already exists");
+
+        if (phoneExists)
+            throw new InvalidOperationException("Phone number already exists");
+
+
         long userid = await db.user_registrations.MaxAsync(u => (long?)u.id) ?? 0L;
         userid = userid + 1;
         var user = new user_registration
