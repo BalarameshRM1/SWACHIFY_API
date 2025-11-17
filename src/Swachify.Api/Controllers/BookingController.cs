@@ -27,7 +27,7 @@ namespace Swachify.Api.Controllers
         [HttpPost("getallbookingsbyuserID")]
         public async Task<ActionResult> getallbookingsbyuserID(GetAllBookingByUserIDDtos input)
         {
-            return Ok(await _bookingService.GetAllBookingByUserIDAsync(input.user_id, input.emp_id, input.offset, input.offset));
+            return Ok(await _bookingService.GetAllBookingByUserIDAsync(input.user_id, input.emp_id, input.limit, input.offset));
         }
 
         [HttpPost("getallbookingsbyid")]
