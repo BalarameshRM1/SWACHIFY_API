@@ -88,7 +88,7 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
             await db.SaveChangesAsync();
 
             await tx.CommitAsync(ct);
-            
+
 
 
             return user.id;
@@ -106,7 +106,7 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
 
     public async Task<List<AllUserDtos>> GetAllUsersAsync(AllusersDto cmd)
     {
-       var userid = cmd.userid > 0 ? cmd.userid : -1;
+        var userid = cmd.userid > 0 ? cmd.userid : -1;
         var roleid = cmd.roleid > 0 ? cmd.roleid : -1;
         var query = string.Format(DbConstants.fn_users_list, userid, roleid, cmd.limit, cmd.offset);
         var rawData = await db.Database.SqlQueryRaw<AllUserDtos>(query).ToListAsync();
@@ -249,7 +249,7 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
     }
 
 
-    
+
 
     public async Task<bool> UpdateUserAsync(long id, EmpCommandDto cmd)
     {
@@ -262,6 +262,39 @@ public class UserService(MyDbContext db, IPasswordHasher hasher, IEmailService e
         existing.mobile = cmd.mobile;
         existing.role_id = cmd.role_id;
         existing.location_id = cmd.location_id;
+
+        if (cmd.dept_id != null && cmd.dept_id.Any())
+        {
+            var existingUserDepts = await db.user_departments
+   .Where(ud => ud.user_id == id)
+   .ToListAsync();
+
+            foreach (var ud in existingUserDepts)
+            {
+                if (!cmd.dept_id.Contains(ud.dept_id))
+                {
+                    ud.is_active = false;
+                }
+                else
+                {
+                    ud.is_active = true;
+                }
+            }
+
+            var existingDeptIds = existingUserDepts.Select(ud => ud.dept_id).ToHashSet();
+            var newDeptIds = cmd.dept_id.Where(d => !existingDeptIds.Contains(d)).ToList();
+            var newUserDepts = newDeptIds.Select(d => new user_department
+            {
+                user_id = id,
+                dept_id = d,
+                is_active = true // assuming new entries are active
+            }).ToList();
+            if (newUserDepts.Count > 0)
+            {
+                await db.user_departments.AddRangeAsync(newUserDepts);
+            }
+        }
+
         await db.SaveChangesAsync();
         return true;
     }

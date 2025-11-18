@@ -197,7 +197,7 @@ namespace Swachify.Application.Services
       var departnames = string.Join(",", resultBookings
        .Where(b => b?.serviceslist != null)
        .SelectMany(b => b.serviceslist)
-       .Select(s => $"[{s.department_name} - {s.service_name} -{s.service_type}]")
+       .Select(s => $"[{s.department_name} - {s.service_name}]")
        .Where(name => !string.IsNullOrEmpty(name))
        .ToList());
       var agentemail = resultBookings.FirstOrDefault().employee_email;
