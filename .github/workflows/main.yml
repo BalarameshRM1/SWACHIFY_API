@@ -3,7 +3,7 @@ name: Deploy .NET API to Azure App Service (POC)
 on:
   push:
     branches:
-      - main  # deploy only when pushing to main branch
+      - dev # deploy only when pushing to main branch
 
 jobs:
   build-and-deploy:
