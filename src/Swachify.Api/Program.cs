@@ -37,6 +37,7 @@ builder.Services.AddScoped<ICleaningService, CleaningService>();
 builder.Services.AddScoped<IMasterService, MasterService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IOtpService, OtpService>();
+builder.Services.AddScoped<ISMSService, SMSService>();
 var app = builder.Build();
 
 app.UseSwagger();
