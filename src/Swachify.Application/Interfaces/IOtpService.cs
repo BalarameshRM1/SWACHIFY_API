@@ -15,5 +15,8 @@ namespace Swachify.Application.Interfaces
 
         Task<bool> VerifyCustomerOtpAsync(CustomerOTPDto requestOTP);
 
+        // Task<string> SendCustomerOtpAsync(CustomerOTPDto requestOTP);
+
+
     }
 }
