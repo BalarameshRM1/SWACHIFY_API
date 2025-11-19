@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Swachify.Application;
 using Swachify.Application.Interfaces;
+using Swachify.Application.Models;
 
 namespace Swachify.Api.Controllers
 {
@@ -9,10 +10,12 @@ namespace Swachify.Api.Controllers
     public class OtpController : ControllerBase
     {
         private readonly IOtpService _otpService;
+        private readonly ISMSService _smsService;
 
-        public OtpController(IOtpService otpService)
+        public OtpController(IOtpService otpService,ISMSService smsService)
         {
             _otpService = otpService;
+            _smsService=smsService;
         }
 
         [HttpPost("send")]
@@ -42,5 +45,14 @@ namespace Swachify.Api.Controllers
             var verified = await _otpService.VerifyCustomerOtpAsync(requestOTP);
             return verified ? Ok("Customer OTP verified successfully.") : BadRequest("Invalid Customer OTP.");
         }
+
+        [HttpPost("sentsms")]
+        public async Task<IActionResult> SentSmS(SMSRequestDto requestOTP)
+        {
+            var verified = await _smsService.SendSMSAsync(requestOTP);
+            return Ok(verified);
+        }
+
+
     }
 }
