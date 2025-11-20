@@ -77,7 +77,7 @@ public class OtpService : IOtpService
             newotp = bookingidOTP.otp;
         }
 
-        string[] values = { "Customer Name", "Agent Name", newotp.ToString() };
+        string[] values = { request.customer_name, request.agent_name, newotp.ToString() };
         int index = 0;
         string message = Regex.Replace(AppConstants.OtpMessage, @"\{#var#\}", m => values[index++]);
 
@@ -114,7 +114,7 @@ public class OtpService : IOtpService
 
     }
 
-    private long Generate6DigitOtp()
+    public long Generate6DigitOtp()
     {
         var random = new Random();
         return random.Next(100000, 999999);
