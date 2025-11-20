@@ -110,10 +110,21 @@ namespace Swachify.Application.Services
     .ToList();
       _db.service_trackings.AddRange(newTrackings);
       await _db.SaveChangesAsync(ct);
-      
+
+      //Save custromer information 
+      var user = new user_registration
+      {
+        email = booking.email,
+        first_name = booking.full_name,
+        mobile = booking.phone,
+        role_id = 4,
+      };
+      _db.user_registrations.AddRange(user);
+      await _db.SaveChangesAsync(ct);
+
       if (!string.IsNullOrEmpty(booking.phone))
       {
-        var request = new SMSRequestDto(booking?.phone, "");
+        var request = new SMSRequestDto(booking?.phone, AppConstants.WelcomeSMSmessage);
         await smsService.SendSMSAsync(request);
       }
 
