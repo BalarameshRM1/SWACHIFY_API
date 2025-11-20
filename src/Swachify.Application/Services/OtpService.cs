@@ -56,7 +56,7 @@ public class OtpService : IOtpService
         || d.mobile == request.phoneNumber || d.email == request.email);
         long newotp = 0;
         var bookingidOTP = await _db.otp_histories.FirstOrDefaultAsync(d => d.booking_id == request.booking_id && d.is_active == true);
-        if (bookingidOTP.otp > 0)
+        if (bookingidOTP == null || bookingidOTP?.otp == 0)
         {
             if (user == null)
                 return "";
@@ -91,7 +91,7 @@ public class OtpService : IOtpService
         {
             await _emailService.SendEmailAsync(request?.email, "Your Swachify Service OTP", message);
         }
-        return string.Empty;
+        return "OTP sent successfully";
     }
 
     public async Task<string> VerifyCustomerOtpAsync(CustomerOTPDto request)

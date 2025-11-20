@@ -61,8 +61,10 @@ public class SMSService(IConfiguration configuration) : ISMSService
         if (result.statuscode == 200)
         {
             var errortext = result?.messageack?.guids?
+                            .Where(g => g?.errors != null)                // ensure errors is not null
                             .SelectMany(g => g.errors)
-                             .FirstOrDefault(e => e.errorcode > 0)?.errortext;
+                            .FirstOrDefault(e => e?.errorcode > 0)
+                            ?.errortext;
             return errortext;
         }
         else if (result?.status.ToLower() == "error")
