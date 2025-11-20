@@ -25,8 +25,8 @@ public record EmpCommandDto
     long role_id
 );
 
-public record CustomerOTPDto(long otp, long user_id);
+public record CustomerOTPDto(long otp, long user_id, string phoneNumber, long booking_id, string email);
 
 public record AssignEmpDto(long id, long user_id);
 
-public record AllusersDto(long userid,long roleid,int limit ,int offset);
+public record AllusersDto(long userid, long roleid, int limit, int offset);
