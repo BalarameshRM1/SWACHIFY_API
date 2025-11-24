@@ -34,6 +34,7 @@ namespace Swachify.Api.Controllers
         [HttpPost("sendcustomerotp")]
         public async Task<IActionResult> SendCustomerOtp(CustomerOTPDto requestOTP)
         {
+
             var sent = await _otpService.SendCustomerOtpAsync(requestOTP);
             return Ok("Customer OTP sent successfully."); 
             

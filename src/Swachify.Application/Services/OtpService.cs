@@ -77,9 +77,11 @@ public class OtpService : IOtpService
             newotp = bookingidOTP.otp;
         }
 
-        string[] values = { request.customer_name, request.agent_name, newotp.ToString() };
-        int index = 0;
-        string message = Regex.Replace(AppConstants.OtpMessage, @"\{#var#\}", m => values[index++]);
+        //string[] values = { request.customer_name, request.agent_name, newotp.ToString() };
+        //int index = 0;
+        //string message = Regex.Replace(AppConstants.OtpMessage, @"\{#var#\}", m => values[index++]);
+
+        var msg = AppConstants.otpsms.Replace("{customername}", request.customer_name).Replace("{otp}", newotp.ToString());
 
         if (!string.IsNullOrEmpty(request?.phoneNumber))
         {
