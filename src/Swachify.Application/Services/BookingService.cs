@@ -124,7 +124,8 @@ namespace Swachify.Application.Services
 
       if (!string.IsNullOrEmpty(booking.phone))
       {
-        var request = new SMSRequestDto(booking?.phone, AppConstants.WelcomeSMSmessage);
+                var message = AppConstants.WelcomeSMSmessage.Replace("{#var#}", booking.full_name);
+        var request = new SMSRequestDto(booking?.phone, message);
         await smsService.SendSMSAsync(request);
       }
 

@@ -77,19 +77,21 @@ public class OtpService : IOtpService
             newotp = bookingidOTP.otp;
         }
 
-        string[] values = { request.customer_name, request.agent_name, newotp.ToString() };
-        int index = 0;
-        string message = Regex.Replace(AppConstants.OtpMessage, @"\{#var#\}", m => values[index++]);
+        //string[] values = { request.customer_name, request.agent_name, newotp.ToString() };
+        //int index = 0;
+        //string message = Regex.Replace(AppConstants.OtpMessage, @"\{#var#\}", m => values[index++]);
+
+        var msg = AppConstants.otpsms.Replace("{customername}", request.customer_name).Replace("{otp}", newotp.ToString());
 
         if (!string.IsNullOrEmpty(request?.phoneNumber))
         {
 
-            var requestcmd = new SMSRequestDto(request?.phoneNumber, message);
+            var requestcmd = new SMSRequestDto(request?.phoneNumber, msg);
             await _smsService.SendSMSAsync(requestcmd);
         }
         if (!string.IsNullOrEmpty(request?.email))
         {
-            await _emailService.SendEmailAsync(request?.email, "Your Swachify Service OTP", message);
+            await _emailService.SendEmailAsync(request?.email, "Your Swachify Service OTP", msg);
         }
         return "OTP sent successfully";
     }
