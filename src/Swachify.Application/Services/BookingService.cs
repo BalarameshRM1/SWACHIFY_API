@@ -10,7 +10,7 @@ using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Swachify.Application.Services
 {
-  public class BookingService(MyDbContext _db, IEmailService _emailService, ISMSService smsService) : IBookingService
+  public class BookingService(MyDbContext _db, IEmailService _emailService, ISMSService smsService, IOtpService otpService) : IBookingService
   {
     public async Task<List<AllBookingsDtos>> GetAllBookingsAsync(long status_id = -1, int limit = 10, int offset = 0)
     {
@@ -244,6 +244,20 @@ namespace Swachify.Application.Services
       {
         await _emailService.SendEmailAsync(agentemail, subject, agentEmailBody);
       }
+
+      var requestdto = resultBookings.FirstOrDefault();
+      //send otp to the Mail and phone 
+      var request2 = new CustomerOTPDto
+      (
+        0, 0,
+        requestdto.phone,
+        requestdto.id,
+        requestdto.email,
+        requestdto.full_name,
+        requestdto.employee_name
+      );
+      await otpService.SendCustomerOtpAsync(request2);
+
       return true;
     }
 
