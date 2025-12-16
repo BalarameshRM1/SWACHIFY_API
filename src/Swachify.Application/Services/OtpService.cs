@@ -64,7 +64,8 @@ public class OtpService : IOtpService
             var otphistory = new otp_history
             {
                 otp = newotp,
-                user_id = request.user_id,
+                user_id = user.id,
+
                 booking_id = request.booking_id,
                 is_active = true
             };
@@ -81,7 +82,7 @@ public class OtpService : IOtpService
         //int index = 0;
         //string message = Regex.Replace(AppConstants.OtpMessage, @"\{#var#\}", m => values[index++]);
 
-        var msg = AppConstants.otpsms.Replace("{customername}", request.customer_name).Replace("{otp}", newotp.ToString());
+        var msg = AppConstants.otpsms.Replace("{#var#}", request.customer_name).Replace("{otp}", newotp.ToString());
 
         if (!string.IsNullOrEmpty(request?.phoneNumber))
         {
