@@ -1,152 +1,188 @@
-﻿using System.Text.Json;
-using Dapper;
+﻿using Dapper;
 using Microsoft.EntityFrameworkCore;
 using Swachify.Application.DTOs;
 using Swachify.Application.Interfaces;
 using Swachify.Application.Models;
 using Swachify.Infrastructure.Data;
 using Swachify.Infrastructure.Models;
+using System.Data;
+using System.Text.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Swachify.Application.Services
 {
   public class BookingService(MyDbContext _db, IEmailService _emailService, ISMSService smsService, IOtpService otpService) : IBookingService
   {
-    public async Task<List<AllBookingsDtos>> GetAllBookingsAsync(long status_id = -1, int limit = 10, int offset = 0)
-    {
-      var query = string.Format(DbConstants.fn_service_booking_list, -1, -1, -1, status_id, limit, offset);
-      using var conn = _db.Database.GetDbConnection();
-      if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync();
-      var rawData = await conn.QueryAsync<AllBookingsDtos>(query);
-      var jsonOptions = new JsonSerializerOptions
-      {
-        PropertyNameCaseInsensitive = true
-      };
-      foreach (var rawD in rawData.ToList())
-      {
-        rawD.serviceslist = JsonSerializer.Deserialize<List<BookingServiceDto>>(rawD.services, jsonOptions)
-?? new List<BookingServiceDto>();
-        rawD.services = "";
-      }
-      return rawData.ToList();
-    }
-
-    public async Task<List<AllBookingsDtos>> GetAllBookingByBookingIDAsync(long bookingId, int limit = 10, int offset = 0)
-    {
-      string query = string.Format(DbConstants.fn_service_booking_list, bookingId, -1, -1, -1, limit, offset);
-
-      using var conn = _db.Database.GetDbConnection();
-      if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync();
-      var rawData = await conn.QueryAsync<AllBookingsDtos>(query);
-      var jsonOptions = new JsonSerializerOptions
-      {
-        PropertyNameCaseInsensitive = true
-      };
-      foreach (var rawD in rawData.ToList())
-      {
-        rawD.serviceslist = JsonSerializer.Deserialize<List<BookingServiceDto>>(rawD.services, jsonOptions)
-         ?? new List<BookingServiceDto>();
-        rawD.services = "";
-      }
-      return rawData.ToList();
-    }
-
-    public async Task<List<AllBookingsDtos>> GetAllBookingByUserIDAsync(long userid, long empid, int limit = 10, int offset = 0)
-    {
-      userid = userid > 0 ? userid : -1;
-      empid = empid > 0 ? empid : -1;
-      string query = string.Format(DbConstants.fn_service_booking_list, -1, userid, empid, -1, limit, offset);
-      using var conn = _db.Database.GetDbConnection();
-      if (conn.State != System.Data.ConnectionState.Open) await conn.OpenAsync();
-      var rawData = await conn.QueryAsync<AllBookingsDtos>(query);
-      var jsonOptions = new JsonSerializerOptions
-      {
-        PropertyNameCaseInsensitive = true
-      };
-      foreach (var rawD in rawData.ToList())
-      {
-        rawD.serviceslist = JsonSerializer.Deserialize<List<BookingServiceDto>>(rawD.services, jsonOptions)
-         ?? new List<BookingServiceDto>();
-        rawD.services = "";
-      }
-      return rawData.ToList();
-    }
-
-    public async Task<long> CreateAsync(service_booking booking, CancellationToken ct = default)
-    {
-      var bookingID = Guid.NewGuid().ToString();
-      booking.created_date = DateTime.Now;
-      booking.is_active = true;
-      booking.booking_id ??= bookingID;
-      booking.full_name = booking.full_name;
-      booking.address = booking.address;
-      booking.phone = booking.phone;
-      booking.email = booking.email;
-      booking.status_id = 1;
-      booking.total = booking.total;
-      booking.subtotal = booking.subtotal;
-      booking.customer_requested_amount = booking.customer_requested_amount;
-      booking.discount_amount = booking.discount_amount;
-      booking.discount_percentage = booking.discount_percentage;
-      booking.discount_total = booking.discount_total;
-      booking.hours = booking.hours;
-      booking.add_on_hours = booking.add_on_hours;
-
-      _db.service_bookings.Add(booking);
-
-      await _db.SaveChangesAsync(ct);
-
-      var newTrackings = booking.service_trackings
-    .Select(item => new service_tracking
-    {
-      service_booking_id = booking.id,
-      booking_id = bookingID,
-      dept_id = item.dept_id,
-      service_id = item.service_id,
-      service_type_id = item.service_type_id,
-      room_sqfts = item.room_sqfts,
-      with_basement = item.with_basement,
-    })
-    .ToList();
-      _db.service_trackings.AddRange(newTrackings);
-      await _db.SaveChangesAsync(ct);
-
-      //Save custromer information 
-      var user = new user_registration
-      {
-        email = booking.email,
-        first_name = booking.full_name,
-        last_name = "",
-        mobile = booking.phone,
-        role_id = 4,
-      };
-      _db.user_registrations.AddRange(user);
-      await _db.SaveChangesAsync(ct);
-
-      if (!string.IsNullOrEmpty(booking.phone))
-      {
-                var message = AppConstants.WelcomeSMSmessage.Replace("{#var#}", booking.full_name);
-        var request = new SMSRequestDto(booking?.phone, message);
-        await smsService.SendSMSAsync(request);
-      }
-
-      if (!string.IsNullOrEmpty(booking.email))
-      {
-        var serviceName = await _db.master_departments.FirstOrDefaultAsync(d => d.id == booking.id);
-        var subject = $"Thank You for Choosing Swachify Cleaning Service!";
-        var mailtemplate = await _db.email_templates.FirstOrDefaultAsync(b => b.title == AppConstants.ServiceBookingMail);
-        string emailBody = mailtemplate.description
-        .Replace("{0}", booking.full_name)
-        .Replace("{1}", serviceName?.department_name + " Service");
-        if (mailtemplate != null)
+        public async Task<List<AllBookingsDtos>> GetAllBookingsAsync(long status_id = -1, int limit = 10, int offset = 0)
         {
-          await _emailService.SendEmailAsync(booking.email, subject, emailBody);
-        }
-      }
-      return booking.id;
-    }
+            var query = string.Format(DbConstants.fn_service_booking_list, -1, -1, -1, status_id, limit, offset);
 
-    public async Task<bool> UpdateAsync(long id, service_booking updatedBooking, CancellationToken ct = default)
+            var conn = _db.Database.GetDbConnection();
+            if (conn.State != System.Data.ConnectionState.Open)
+                await conn.OpenAsync();
+
+            var rawData = await conn.QueryAsync<AllBookingsDtos>(query);
+
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            foreach (var rawD in rawData.ToList())
+            {
+                rawD.serviceslist = JsonSerializer.Deserialize<List<BookingServiceDto>>(rawD.services, jsonOptions)
+                    ?? new List<BookingServiceDto>();
+                rawD.services = "";
+            }
+
+            return rawData.ToList();
+        }
+
+        public async Task<List<AllBookingsDtos>> GetAllBookingByBookingIDAsync(long bookingId, int limit = 10, int offset = 0)
+        {
+            string query = string.Format(DbConstants.fn_service_booking_list, bookingId, -1, -1, -1, limit, offset);
+
+            var conn = _db.Database.GetDbConnection();
+            if (conn.State != System.Data.ConnectionState.Open)
+                await conn.OpenAsync();
+
+            var rawData = await conn.QueryAsync<AllBookingsDtos>(query);
+
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            foreach (var rawD in rawData.ToList())
+            {
+                rawD.serviceslist = JsonSerializer.Deserialize<List<BookingServiceDto>>(rawD.services, jsonOptions)
+                    ?? new List<BookingServiceDto>();
+                rawD.services = "";
+            }
+
+            return rawData.ToList();
+        }
+
+        public async Task<List<AllBookingsDtos>> GetAllBookingByUserIDAsync(long userid, long empid, int limit = 10, int offset = 0)
+        {
+            userid = userid > 0 ? userid : -1;
+            empid = empid > 0 ? empid : -1;
+
+            string query = string.Format(DbConstants.fn_service_booking_list, -1, userid, empid, -1, limit, offset);
+
+            var conn = _db.Database.GetDbConnection();
+            if (conn.State != System.Data.ConnectionState.Open)
+                await conn.OpenAsync();
+
+            var rawData = await conn.QueryAsync<AllBookingsDtos>(query);
+
+            var jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            foreach (var rawD in rawData.ToList())
+            {
+                rawD.serviceslist = JsonSerializer.Deserialize<List<BookingServiceDto>>(rawD.services, jsonOptions)
+                    ?? new List<BookingServiceDto>();
+                rawD.services = "";
+            }
+
+            return rawData.ToList();
+        }
+
+        public async Task<long> CreateAsync(service_booking booking, CancellationToken ct = default)
+        {
+            var bookingID = Guid.NewGuid().ToString();
+
+            // Base booking setup
+            booking.created_date = DateTime.Now;
+            booking.is_active = true;
+            booking.booking_id ??= bookingID;
+            booking.status_id = 1;
+
+            // Save booking
+            _db.service_bookings.Add(booking);
+            await _db.SaveChangesAsync(ct);
+
+            // Save service trackings
+            var newTrackings = booking.service_trackings
+                .Select(item => new service_tracking
+                {
+                    service_booking_id = booking.id,
+                    booking_id = bookingID,
+                    dept_id = item.dept_id,
+                    service_id = item.service_id,
+                    service_type_id = item.service_type_id,
+                    room_sqfts = item.room_sqfts,
+                    with_basement = item.with_basement,
+                })
+                .ToList();
+
+            _db.service_trackings.AddRange(newTrackings);
+            await _db.SaveChangesAsync(ct);
+
+            
+
+            var existingUser = await _db.user_registrations
+                .FirstOrDefaultAsync(u => u.email == booking.email || u.mobile == booking.phone);
+
+            if (existingUser == null)
+            {
+                var newUser = new user_registration
+                {
+                    email = booking.email,
+                    first_name = booking.full_name,
+                    last_name = "",
+                    mobile = booking.phone,
+                    role_id = 4,
+                };
+
+                await _db.user_registrations.AddAsync(newUser, ct);
+                await _db.SaveChangesAsync(ct);
+
+                existingUser = newUser;
+            }
+
+            // Link booking to user
+            booking.created_by = existingUser.id;
+            await _db.SaveChangesAsync(ct);
+
+
+            if (!string.IsNullOrEmpty(booking.phone))
+            {
+                var message = AppConstants.WelcomeSMSmessage
+                    .Replace("{#var#}", booking.full_name);
+
+                var request = new SMSRequestDto(booking.phone, message);
+                await smsService.SendSMSAsync(request);
+            }
+
+            if (!string.IsNullOrEmpty(booking.email))
+            {
+                // FIXED: This was previously WRONG (booking.id is NOT department id)
+                var serviceDept = await _db.master_departments
+                    .FirstOrDefaultAsync(d => d.id == booking.service_trackings.First().dept_id);
+
+                var subject = $"Thank You for Choosing Swachify Cleaning Service!";
+                var mailtemplate = await _db.email_templates
+                    .FirstOrDefaultAsync(b => b.title == AppConstants.ServiceBookingMail);
+
+                if (mailtemplate != null)
+                {
+                    string emailBody = mailtemplate.description
+                        .Replace("{0}", booking.full_name)
+                        .Replace("{1}", serviceDept?.department_name + " Service");
+
+                    await _emailService.SendEmailAsync(booking.email, subject, emailBody);
+                }
+            }
+
+            return booking.id;
+        }
+
+
+        public async Task<bool> UpdateAsync(long id, service_booking updatedBooking, CancellationToken ct = default)
     {
       var existing = await _db.service_bookings.FirstOrDefaultAsync(b => b.id == id, ct);
       if (existing == null) return false;
